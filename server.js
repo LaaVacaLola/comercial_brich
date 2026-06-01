@@ -62,6 +62,7 @@ app.use("/api/dashboard", require("./api/routes/dashboard.routes"));
 app.use("/api/usuarios", require("./api/routes/user.routes")); // ✅ ya toma req.body
 app.use("/api/admin", require("./api/routes/admin.routes"));
 app.use("/api/productos", require("./api/routes/producto.routes"));
+app.use("/api/mercado-publico", require("./api/routes/mercadoPublico.routes"));
 
 
 // ===============================

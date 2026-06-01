@@ -1,27 +1,29 @@
-const jwt = require("jsonwebtoken");
-
 function adminMiddleware(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  const user = req.user;
+  const role = String(user?.role || user?.rol || user?.nombreRol || "")
+    .trim()
+    .toLowerCase();
 
-  if (!token) return res.status(401).json({ message: "Token requerido" });
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Aquí decoded.role es "admin" o "cliente"
-    if (decoded.role !== "admin") {
-      return res.status(403).json({
-        message: "Acceso denegado. Solo administradores.",
-      });
-    }
-
-    req.user = decoded;
-    next();
-
-  } catch (err) {
-    return res.status(403).json({ message: "Token inválido" });
+  if (!user) {
+    return res.status(401).json({
+      code: "AUTH_REQUIRED",
+      error: "Token requerido",
+      message: "Token requerido",
+      redirectTo: "/html/login.html",
+    });
   }
+
+  if (!["admin", "administrador"].includes(role)) {
+    return res.status(403).json({
+      code: "ADMIN_REQUIRED",
+      error: "Acceso denegado. Solo administradores.",
+      message: "Acceso denegado. Solo administradores.",
+      redirectTo: "/html/login.html",
+      role: role || null,
+    });
+  }
+
+  next();
 }
 
 module.exports = adminMiddleware;

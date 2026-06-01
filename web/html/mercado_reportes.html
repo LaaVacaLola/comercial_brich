@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analitica Mercado Publico</title>
+  <link rel="stylesheet" href="../css/mercado_publico.css">
+  <link rel="stylesheet" href="../css/admin_nav.css">
+  <script src="../libs/chart.umd.min.js"></script>
+  <script defer src="../js/admin_nav.js"></script>
+  <script defer src="../js/mercado_common.js"></script>
+  <script defer src="../js/mercado_reportes.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
+  </header>
+
+  <main class="container">
+    <h1>Analitica Mercado Publico</h1>
+    <p class="subtitle">Resumen de ordenes consultadas desde ChileCompra.</p>
+
+    <section class="filters">
+      <input type="date" id="fecha">
+      <select id="estado">
+        <option value="">Todos los estados</option>
+        <option value="todos">Todos</option>
+        <option value="enviadaproveedor">Enviada proveedor</option>
+        <option value="aceptada">Aceptada</option>
+        <option value="cancelada">Cancelada</option>
+        <option value="recepcionconforme">Recepcion conforme</option>
+        <option value="pendienterecepcion">Pendiente recepcion</option>
+      </select>
+      <input type="text" id="codigoOrganismo" placeholder="Codigo organismo">
+      <input type="text" id="codigoProveedor" placeholder="Codigo proveedor">
+      <button id="generarBtn" class="btn-primary">Generar</button>
+    </section>
+
+    <p id="statusMessage" class="status-message">Selecciona filtros y presiona Generar.</p>
+
+    <section class="kpi-grid">
+      <article class="kpi-card">
+        <span>Total ordenes</span>
+        <strong id="totalOrdenes">0</strong>
+      </article>
+      <article class="kpi-card">
+        <span>Monto total</span>
+        <strong id="montoTotal">$0</strong>
+      </article>
+      <article class="kpi-card">
+        <span>Promedio orden</span>
+        <strong id="promedioOrden">$0</strong>
+      </article>
+    </section>
+
+    <section class="charts-grid">
+      <div class="chart-card">
+        <h2>Top proveedores</h2>
+        <canvas id="proveedoresChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2>Top compradores</h2>
+        <canvas id="compradoresChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2>Ordenes por estado</h2>
+        <canvas id="estadosChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2>Montos por fecha</h2>
+        <canvas id="fechasChart"></canvas>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

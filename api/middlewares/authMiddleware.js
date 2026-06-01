@@ -1,19 +1,28 @@
 const jwt = require("jsonwebtoken");
 
 function authMiddleware(req, res, next) {
-  // El token suele venir en los headers: "Authorization: Bearer <token>"
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (!token) return res.status(401).json({ message: "Token requerido" });
+  if (!token) {
+    return res.status(401).json({
+      code: "AUTH_REQUIRED",
+      error: "Token requerido",
+      message: "Token requerido",
+      redirectTo: "/html/login.html",
+    });
+  }
 
   try {
-    // Verificar token con la misma clave del .env
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Guarda info del usuario para usar después
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch (err) {
-    return res.status(403).json({ message: "Token inválido" });
+    return res.status(401).json({
+      code: "TOKEN_INVALID",
+      error: "Token invalido",
+      message: "Token invalido",
+      redirectTo: "/html/login.html",
+    });
   }
 }
 

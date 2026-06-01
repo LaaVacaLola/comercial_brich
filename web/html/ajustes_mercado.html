@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ajustes Mercado Publico</title>
+  <link rel="stylesheet" href="../css/mercado_publico.css">
+  <link rel="stylesheet" href="../css/admin_nav.css">
+  <script defer src="../js/admin_nav.js"></script>
+  <script defer src="../js/mercado_common.js"></script>
+  <script defer src="../js/ajustes_mercado.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
+  </header>
+
+  <main class="container">
+    <h1>Ajustes Mercado Publico</h1>
+    <p class="subtitle">Diagnostica la conexion con ChileCompra sin exponer el ticket en el navegador.</p>
+
+    <p id="statusMessage" class="status-message">Cargando configuracion...</p>
+
+    <section class="settings-grid">
+      <article class="settings-card">
+        <h2>Sesion administrativa</h2>
+        <dl>
+          <dt>Estado</dt>
+          <dd id="adminStatus">-</dd>
+          <dt>Email</dt>
+          <dd id="adminEmail">-</dd>
+          <dt>Rol token</dt>
+          <dd id="adminRole">-</dd>
+        </dl>
+      </article>
+
+      <article class="settings-card">
+        <h2>Mercado API</h2>
+        <dl>
+          <dt>Ticket configurado</dt>
+          <dd id="ticketStatus">-</dd>
+          <dt>Fuente</dt>
+          <dd id="ticketSource">-</dd>
+          <dt>Ticket</dt>
+          <dd id="ticketMasked">-</dd>
+          <dt>Largo del ticket</dt>
+          <dd id="ticketLength">-</dd>
+          <dt>Actualizado</dt>
+          <dd id="ticketUpdated">-</dd>
+          <dt>Endpoint publico</dt>
+          <dd id="baseUrl">-</dd>
+        </dl>
+        <form id="ticketForm" class="ticket-form">
+          <label for="ticketInput">Nuevo ticket</label>
+          <input id="ticketInput" type="password" autocomplete="off" placeholder="Ingresa tu ticket ChileCompra">
+          <button class="btn-primary" type="submit">Guardar ticket</button>
+        </form>
+        <button id="testBtn" class="btn-primary" type="button">Probar conexion ChileCompra</button>
+      </article>
+    </section>
+
+    <section class="settings-card full">
+      <h2>Resultado de prueba</h2>
+      <div id="testResult" class="test-result">Aun no se ha ejecutado una prueba.</div>
+    </section>
+  </main>
+</body>
+</html>
