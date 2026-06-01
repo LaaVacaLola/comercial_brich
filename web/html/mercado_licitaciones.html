@@ -24,9 +24,10 @@
     <p class="subtitle">Consulta oportunidades publicadas en ChileCompra sin exponer el ticket en el frontend.</p>
 
     <section class="filters">
-      <input type="date" id="fecha">
+      <input type="date" id="fechaDesde" aria-label="Fecha desde">
+      <input type="date" id="fechaHasta" aria-label="Fecha hasta">
       <select id="estado">
-        <option value="">Todos los estados</option>
+        <option value="todos">Todos</option>
         <option value="activas">Activas</option>
         <option value="publicada">Publicada</option>
         <option value="cerrada">Cerrada</option>
@@ -34,7 +35,6 @@
         <option value="adjudicada">Adjudicada</option>
         <option value="revocada">Revocada</option>
         <option value="suspendida">Suspendida</option>
-        <option value="todos">Todos</option>
       </select>
       <input type="text" id="codigo" placeholder="Codigo licitacion">
       <input type="text" id="codigoOrganismo" placeholder="Codigo organismo">
@@ -51,7 +51,7 @@
           <tr>
             <th>Codigo</th>
             <th>Nombre</th>
-            <th>Organismo</th>
+            <th>Tipo</th>
             <th>Fecha cierre</th>
             <th>Estado</th>
             <th>Acciones</th>
@@ -59,6 +59,13 @@
         </thead>
         <tbody id="resultTable"></tbody>
       </table>
+    </section>
+
+    <section class="pagination-bar" aria-label="Paginacion licitaciones">
+      <button id="prevPageBtn" class="btn-secondary" type="button">Anterior</button>
+      <div id="pageButtons" class="page-buttons"></div>
+      <button id="nextPageBtn" class="btn-secondary" type="button">Siguiente</button>
+      <span id="pageInfo" class="page-info">Pagina 0 de 0</span>
     </section>
   </main>
 

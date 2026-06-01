@@ -129,8 +129,48 @@ function lastSevenDays() {
   });
 }
 
+function datesBetween(fechaDesde, fechaHasta) {
+  const from = fechaDesde ? toApiDate(fechaDesde) : undefined;
+  const to = fechaHasta ? toApiDate(fechaHasta) : undefined;
+
+  if (!from && !to) return null;
+
+  const parse = (value) => {
+    const day = Number(value.slice(0, 2));
+    const month = Number(value.slice(2, 4)) - 1;
+    const year = Number(value.slice(4, 8));
+    return new Date(year, month, day);
+  };
+
+  const start = parse(from || to);
+  const end = parse(to || from);
+
+  if (start > end) {
+    const err = new Error("fechaDesde no puede ser mayor que fechaHasta");
+    err.status = 400;
+    throw err;
+  }
+
+  const maxDays = 31;
+  const dates = [];
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    if (dates.length >= maxDays) {
+      const err = new Error(`El rango de fechas no puede superar ${maxDays} dias`);
+      err.status = 400;
+      throw err;
+    }
+
+    dates.push(formatApiDate(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return dates;
+}
+
 function hasAnyQuery(query = {}) {
-  return ["fecha", "codigo", "estado", "CodigoOrganismo", "codigoOrganismo", "CodigoProveedor", "codigoProveedor"]
+  return ["fecha", "fechaDesde", "fechaHasta", "codigo", "estado", "CodigoOrganismo", "codigoOrganismo", "CodigoProveedor", "codigoProveedor"]
     .some((key) => query[key] !== undefined && String(query[key]).trim() !== "");
 }
 
@@ -188,6 +228,63 @@ async function requestLicitacionesUltimaSemana() {
   };
 }
 
+async function requestLicitacionesPorFechas(query) {
+  const fechas = datesBetween(query.fechaDesde, query.fechaHasta);
+  if (!fechas) return null;
+
+  const ticket = await getTicket();
+  const estado = cleanEstado(query.estado, LICITACION_ESTADOS, "estado");
+  const codigoOrganismo = cleanCode(query.CodigoOrganismo || query.codigoOrganismo, "CodigoOrganismo");
+  const codigoProveedor = cleanCode(query.CodigoProveedor || query.codigoProveedor, "CodigoProveedor");
+
+  const fetchRange = async (includeEstado) => Promise.allSettled(
+    fechas.map((fecha) => {
+      const params = { fecha, ticket };
+      if (includeEstado && estado) params.estado = estado;
+      if (codigoOrganismo) params.CodigoOrganismo = codigoOrganismo;
+      if (codigoProveedor) params.CodigoProveedor = codigoProveedor;
+      return requestChileCompra(`${PUBLIC_URL}/licitaciones.json`, params);
+    })
+  );
+
+  let results = await fetchRange(true);
+  let fulfilled = results
+    .filter((result) => result.status === "fulfilled")
+    .map((result) => result.value);
+  let listado = fulfilled.flatMap(getListado);
+
+  if (!listado.length && estado === "todos") {
+    results = await fetchRange(false);
+    fulfilled = results
+      .filter((result) => result.status === "fulfilled")
+      .map((result) => result.value);
+    listado = fulfilled.flatMap(getListado);
+  }
+
+  if (!fulfilled.length) {
+    const firstError = results.find((result) => result.status === "rejected")?.reason;
+    throw firstError || new Error("No fue posible obtener licitaciones para el rango de fechas");
+  }
+
+  const byCode = new Map();
+  listado.forEach((item) => {
+    const code = item.CodigoExterno || item.Codigo || JSON.stringify(item);
+    byCode.set(code, item);
+  });
+
+  return {
+    Cantidad: byCode.size,
+    Listado: Array.from(byCode.values()),
+    filtrosAplicados: {
+      rango: "fecha_desde_hasta",
+      fechas,
+      estado: estado || null,
+      codigoOrganismo: codigoOrganismo || null,
+      codigoProveedor: codigoProveedor || null,
+    },
+  };
+}
+
 function getListado(data) {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.Listado)) return data.Listado;
@@ -196,6 +293,13 @@ function getListado(data) {
 }
 
 async function listarLicitaciones(query = {}) {
+  if (query.codigo) {
+    return requestChileCompra(`${PUBLIC_URL}/licitaciones.json`, await buildParams(query, LICITACION_ESTADOS));
+  }
+
+  const byRange = await requestLicitacionesPorFechas(query);
+  if (byRange) return byRange;
+
   if (!hasAnyQuery(query)) {
     return requestLicitacionesUltimaSemana();
   }

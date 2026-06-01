@@ -1,7 +1,7 @@
 (function () {
   function redirectToLogin() {
     localStorage.clear();
-    window.location.href = "login.html";
+    window.location.href = "/html/login.html";
   }
 
   function ensureAdminSession() {
@@ -26,25 +26,25 @@
       {
         label: "Catalogo",
         links: [
-          { href: "dashboard_admin.html", label: "Dashboard" },
-          { href: "catalogo_admin.html", label: "Catalogo" },
-          { href: "ordenes_admin.html", label: "Ordenes" },
-          { href: "reportes_admin.html", label: "Reportes" },
+          { href: "/html/dashboard_admin.html", label: "Dashboard" },
+          { href: "/html/catalogo_admin.html", label: "Catalogo" },
+          { href: "/html/ordenes_admin.html", label: "Ordenes" },
+          { href: "/html/reportes_admin.html", label: "Reportes" },
         ],
       },
       {
         label: "Mercado Publico",
         links: [
-          { href: "mercado_licitaciones.html", label: "Licitaciones" },
-          { href: "mercado_ordenes.html", label: "Ordenes" },
-          { href: "mercado_reportes.html", label: "Analitica" },
+          { href: "/html/mercado_licitaciones.html", label: "Licitaciones" },
+          { href: "/html/mercado_ordenes.html", label: "Ordenes" },
+          { href: "/html/mercado_reportes.html", label: "Analitica" },
         ],
       },
       {
         label: "Ajustes",
         links: [
-          { href: "gestion_usuario.html", label: "Usuarios" },
-          { href: "ajustes_mercado.html", label: "Mercado API" },
+          { href: "/html/gestion_usuario.html", label: "Usuarios" },
+          { href: "/html/ajustes_mercado.html", label: "Mercado API" },
         ],
       },
     ];
@@ -72,7 +72,7 @@
         const link = document.createElement("a");
         link.href = item.href;
         link.textContent = item.label;
-        if (current === item.href) link.classList.add("active");
+        if (current === item.href.split("/").pop()) link.classList.add("active");
         links.appendChild(link);
       });
 

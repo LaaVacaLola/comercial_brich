@@ -172,7 +172,7 @@ tr:nth-child(even) {
 }
 
 .modal-content.wide {
-  max-width: 900px;
+  max-width: 1120px;
 }
 
 .close-btn {
@@ -210,6 +210,215 @@ tr:nth-child(even) {
   padding: 1rem;
   overflow: auto;
   font-size: 0.85rem;
+}
+
+.detail-section {
+  border-top: 1px solid #e2e8f0;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.detail-section h3 {
+  color: #0a2f6b;
+  margin: 0 0 0.75rem;
+}
+
+.detail-table {
+  box-shadow: none;
+  font-size: 0.9rem;
+}
+
+.tender-sheet {
+  color: #263238;
+}
+
+.tender-header {
+  align-items: flex-start;
+  border-bottom: 1px solid #d8e1ea;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+}
+
+.tender-header h2 {
+  color: #123b6d;
+  font-size: 1.35rem;
+  line-height: 1.3;
+  margin: 0.35rem 0 0;
+}
+
+.tender-code {
+  color: #52616f;
+  display: inline-block;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.tender-state {
+  background: #e6f3ec;
+  border: 1px solid #b9dfca;
+  border-radius: 6px;
+  color: #17633a;
+  font-weight: 800;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.tender-summary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  margin-bottom: 1rem;
+}
+
+.tender-metric {
+  background: #f6f9fc;
+  border: 1px solid #dfe8f1;
+  border-left: 4px solid #1f4e79;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.tender-metric span,
+.tender-info-row span {
+  color: #607080;
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tender-metric strong {
+  color: #123b6d;
+  display: block;
+  font-size: 1.05rem;
+  margin-top: 5px;
+}
+
+.tender-layout {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.8fr);
+}
+
+.tender-panel {
+  background: #fff;
+  border: 1px solid #dfe8f1;
+  border-radius: 6px;
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.tender-panel h3 {
+  border-bottom: 1px solid #e5edf5;
+  color: #123b6d;
+  font-size: 1rem;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+}
+
+.tender-panel p {
+  line-height: 1.55;
+  margin-top: 0;
+}
+
+.tender-info-row {
+  border-bottom: 1px solid #edf2f7;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: 145px 1fr;
+  padding: 8px 0;
+}
+
+.tender-info-row strong {
+  color: #263238;
+  font-weight: 700;
+}
+
+.tender-info-grid {
+  display: grid;
+  gap: 0 18px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.tender-timeline {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tender-timeline li {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.tender-timeline span {
+  color: #607080;
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tender-timeline strong {
+  color: #263238;
+  display: block;
+  margin-top: 4px;
+}
+
+.tender-json {
+  margin-top: 1rem;
+}
+
+.pagination-bar {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 1.2rem 0;
+  flex-wrap: wrap;
+}
+
+.page-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.page-button {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #0a2f6b;
+  cursor: pointer;
+  font-weight: 700;
+  min-width: 38px;
+  padding: 9px 10px;
+}
+
+.page-button.active {
+  background: #0a2f6b;
+  color: #fff;
+}
+
+.page-info {
+  color: #475569;
+  font-weight: 700;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .kpi-grid {
@@ -343,5 +552,19 @@ tr:nth-child(even) {
   .helper-panel input,
   .helper-panel button {
     width: 100%;
+  }
+
+  .tender-header,
+  .tender-layout {
+    display: block;
+  }
+
+  .tender-state {
+    display: inline-block;
+    margin-top: 12px;
+  }
+
+  .tender-info-row {
+    grid-template-columns: 1fr;
   }
 }
