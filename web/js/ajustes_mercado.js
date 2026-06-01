@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       MP.setMessage("Revisando configuracion del backend...");
       const data = await MP.request("/ajustes");
+      if (!data) return;
 
       text("adminStatus", data.sesionAdmin ? "OK" : "No validada");
       text("adminEmail", data.usuario?.email || "-");
@@ -34,19 +35,23 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
 
     const input = document.getElementById("ticketInput");
+    const result = document.getElementById("testResult");
     const ticket = input.value.trim();
 
     if (!ticket) {
       MP.setMessage("Ingresa un ticket antes de guardar.", true);
+      result.textContent = "No se envio ningun ticket para guardar.";
       return;
     }
 
     try {
       MP.setMessage("Guardando ticket en MongoDB...");
+      result.textContent = "Enviando ticket al backend para guardarlo en MongoDB...";
       const data = await MP.request("/ajustes/ticket", {
-        method: "PUT",
+        method: "POST",
         body: { ticket },
       });
+      if (!data) return;
 
       input.value = "";
       text("ticketStatus", "Configurado");
@@ -54,8 +59,10 @@ document.addEventListener("DOMContentLoaded", () => {
       text("ticketMasked", data.mercadoPublico?.ticketEnmascarado || "-");
       text("ticketLength", data.mercadoPublico?.ticketLargo || 0);
       text("ticketUpdated", data.mercadoPublico?.actualizadoEn || "-");
+      result.textContent = `${data.message} Fuente: ${data.mercadoPublico?.ticketFuente || "mongodb"}. Ticket: ${data.mercadoPublico?.ticketEnmascarado || "guardado"}.`;
       MP.setMessage(data.message || "Ticket guardado correctamente.");
     } catch (err) {
+      result.textContent = `Error al guardar ticket: ${err.message}`;
       MP.setMessage(err.message, true);
     }
   }
@@ -67,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
       MP.setMessage("Probando conexion con ChileCompra...");
       result.textContent = "Consultando compradores en ChileCompra...";
       const data = await MP.request("/ajustes/test");
+      if (!data) return;
 
       result.textContent = `${data.message} Compradores encontrados: ${data.compradoresEncontrados}.`;
       MP.setMessage("Conexion OK.");

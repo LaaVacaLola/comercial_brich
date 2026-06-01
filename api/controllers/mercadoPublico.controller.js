@@ -3,7 +3,9 @@ const mercadoPublico = require("../services/mercadoPublico.service");
 function sendError(res, err) {
   const status = err.status || 500;
   res.status(status).json({
+    ok: false,
     error: err.message || "Error interno consultando Mercado Publico",
+    message: err.message || "Error interno consultando Mercado Publico",
     source: status === 401 || status === 403 ? "auth_or_chilecompra" : "mercado_publico",
   });
 }
@@ -94,6 +96,7 @@ exports.saveTicket = async (req, res) => {
     );
 
     res.json({
+      ok: true,
       message: "Ticket de Mercado Publico guardado correctamente.",
       mercadoPublico: data,
     });

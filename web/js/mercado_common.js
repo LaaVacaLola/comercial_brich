@@ -1,5 +1,6 @@
 window.MercadoPublico = (() => {
   const API_BASE = "/api/mercado-publico";
+  const API_FALLBACK_BASE = "/api/admin/mercado-publico";
 
   function redirectToLogin() {
     localStorage.clear();
@@ -20,10 +21,16 @@ window.MercadoPublico = (() => {
   }
 
   function setMessage(text, isError = false) {
+    console.log(text);
     const element = document.getElementById("statusMessage");
     if (!element) return;
     element.textContent = text;
     element.classList.toggle("error", isError);
+  }
+
+  function backendMessage(method, path) {
+    const action = method === "GET" ? "Consulta" : "Operacion";
+    return `${action} backend OK: ${path}`;
   }
 
   function buildQuery(ids) {
@@ -50,28 +57,41 @@ window.MercadoPublico = (() => {
     const token = getTokenOrRedirect();
     if (!token) return null;
 
-    const res = await fetch(`${API_BASE}${path}`, {
+    const requestOptions = {
       method: options.method || "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
-    });
+    };
+
+    let res = await fetch(`${API_BASE}${path}`, requestOptions);
+
+    if (res.status === 404 && path.startsWith("/ajustes")) {
+      setMessage(`Ruta principal no encontrada. Probando ruta admin para ${path}...`, true);
+      res = await fetch(`${API_FALLBACK_BASE}${path}`, requestOptions);
+    }
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      if (res.status === 401 || ["AUTH_REQUIRED", "TOKEN_INVALID", "ADMIN_REQUIRED"].includes(data.code)) {
+      const message = data.error || data.message || `Error HTTP ${res.status}`;
+
+      if (res.status === 401 || ["AUTH_REQUIRED", "TOKEN_INVALID"].includes(data.code)) {
+        setMessage(`${message}. Redirigiendo al login...`, true);
         redirectToLogin();
         return null;
       }
 
+      setMessage(message, true);
+
       if (res.status === 403) {
-        throw new Error(data.error || data.message || "Acceso rechazado. Revisa tu sesion admin o el ticket de ChileCompra.");
+        throw new Error(message || "Acceso rechazado. Revisa tu sesion admin o el ticket de ChileCompra.");
       }
-      throw new Error(data.error || data.message || `Error HTTP ${res.status}`);
+      throw new Error(message);
     }
 
+    setMessage(data.message || backendMessage(options.method || "GET", path));
     return data;
   }
 

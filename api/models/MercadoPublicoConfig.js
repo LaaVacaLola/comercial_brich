@@ -21,4 +21,4 @@ const mercadoPublicoConfigSchema = new Schema(
   { timestamps: true }
 );
 
-module.exports = model("MercadoPublicoConfig", mercadoPublicoConfigSchema);
+module.exports = model("MercadoPublicoConfig", mercadoPublicoConfigSchema, "mercado_publico_config");

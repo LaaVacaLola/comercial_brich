@@ -2,6 +2,7 @@
 const router = require("express").Router();
 const auth = require("../middlewares/authMiddleware");
 const adminAuth = require("../middlewares/adminMiddleware");
+const mercadoPublicoController = require("../controllers/mercadoPublico.controller");
 
 // Ruta protegida para admins
 router.get("/stats", auth, adminAuth, (req, res) => {
@@ -16,5 +17,10 @@ router.get("/stats", auth, adminAuth, (req, res) => {
     },
   });
 });
+
+router.get("/mercado-publico/ajustes", auth, adminAuth, mercadoPublicoController.getAjustes);
+router.post("/mercado-publico/ajustes/ticket", auth, adminAuth, mercadoPublicoController.saveTicket);
+router.put("/mercado-publico/ajustes/ticket", auth, adminAuth, mercadoPublicoController.saveTicket);
+router.get("/mercado-publico/ajustes/test", auth, adminAuth, mercadoPublicoController.testConexion);
 
 module.exports = router;

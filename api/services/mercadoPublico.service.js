@@ -255,34 +255,40 @@ async function guardarTicket(ticket, updatedBy) {
     throw err;
   }
 
-  if (!/^[A-Za-z0-9_-]{6,120}$/.test(clean)) {
+  if (!/^[A-Za-z0-9_.:-]{6,180}$/.test(clean)) {
     const err = new Error("El ticket tiene un formato invalido");
     err.status = 400;
     throw err;
   }
 
-  const config = await MercadoPublicoConfig.findOneAndUpdate(
-    { key: "default" },
-    {
-      $set: {
-        ticket: clean,
-        updatedBy: updatedBy || null,
+  try {
+    const config = await MercadoPublicoConfig.findOneAndUpdate(
+      { key: "default" },
+      {
+        $set: {
+          ticket: clean,
+          updatedBy: updatedBy || null,
+        },
+        $setOnInsert: {
+          key: "default",
+        },
       },
-      $setOnInsert: {
-        key: "default",
-      },
-    },
-    { new: true, upsert: true }
-  ).lean();
+      { new: true, upsert: true, runValidators: true }
+    ).lean();
 
-  return {
-    ticketConfigurado: true,
-    ticketLargo: config.ticket.length,
-    ticketEnmascarado: maskTicket(config.ticket),
-    ticketFuente: "mongodb",
-    actualizadoEn: config.updatedAt,
-    actualizadoPor: config.updatedBy,
-  };
+    return {
+      ticketConfigurado: true,
+      ticketLargo: config.ticket.length,
+      ticketEnmascarado: maskTicket(config.ticket),
+      ticketFuente: "mongodb",
+      actualizadoEn: config.updatedAt,
+      actualizadoPor: config.updatedBy,
+    };
+  } catch (err) {
+    const dbError = new Error(`No se pudo guardar el ticket en MongoDB: ${err.message}`);
+    dbError.status = 500;
+    throw dbError;
+  }
 }
 
 function pickNumber(value) {
