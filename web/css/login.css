@@ -1,0 +1,92 @@
+/* Fondo con degradado */
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #2c3e91, #6ab0de);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Contenedor principal */
+.login-container {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  width: 350px;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+/* Logo */
+.logo-img {
+  width: 120px;
+  height: auto;
+  margin-bottom: 15px;
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.logo-img:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Título */
+h1 {
+  color: #2c3e91;
+  margin-bottom: 1rem;
+}
+
+/* Inputs */
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  transition: border 0.3s ease;
+}
+
+input:focus {
+  border-color: #2c3e91;
+  outline: none;
+  box-shadow: 0 0 8px rgba(44, 62, 145, 0.2);
+}
+
+/* Botón */
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  background: #2c3e91;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: #1b285a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 62, 145, 0.3);
+}
+
+/* Animación */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mensaje de error */
+#error-message {
+  color: red;
+  margin-top: 10px;
+  font-size: 14px;
+}

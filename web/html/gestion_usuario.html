@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestión de Usuarios</title>
+  <link rel="stylesheet" href="../css/gestion_usuario.css"/>
+  <script defer src="../js/gestion_usuario.js"></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">⬅ Volver al Dashboard</a>
+  </header>
+
+  <main class="container">
+    <h1>👥 Gestión de Usuarios</h1>
+    <p class="subtitle">Administra clientes y administradores de la plataforma</p>
+
+    <!-- Crear Usuario -->
+    <section class="card">
+      <h2>➕ Crear Usuario</h2>
+      <form id="crearUsuarioForm" class="form-grid" autocomplete="off">
+        <input type="text" id="nombre" placeholder="Nombre" required />
+        <input type="text" id="apellido" placeholder="Apellido" required />
+        <input type="email" id="email" placeholder="Correo electrónico" required />
+        <input type="password" id="password" placeholder="Contraseña" required />
+        <select id="rolNombre">
+            <option value="cliente">Cliente</option>
+            <option value="admin">Administrador</option>
+        </select>
+        <button type="submit" class="btn-primary">Crear Usuario</button>
+      </form>
+
+    </section>
+
+    <!-- Lista de Usuarios -->
+    <section class="card">
+      <h2>📋 Lista de Usuarios</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="usuariosTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Editar Usuario -->
+  <div id="modalEditar" class="modal">
+    <div class="modal-content">
+      <span id="cerrarModal" class="close">&times;</span>
+      <h2>✏ Editar Usuario</h2>
+      <form id="editarUsuarioForm" class="form-grid" autocomplete="off">
+        <input type="text" id="editNombre" required />
+        <input type="text" id="editApellido" required />
+        <input type="email" id="editEmail" required />
+        <select id="editRolNombre">
+            <option value="cliente">Cliente</option>
+            <option value="admin">Administrador</option>
+        </select>
+        <button type="submit" class="btn-primary">Guardar Cambios</button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Modal Confirmación -->
+  <div id="modalConfirm" class="modal">
+    <div class="modal-content confirm">
+      <h2 id="confirmMessage">¿Estás seguro?</h2>
+      <div class="modal-actions">
+        <button id="btnConfirmYes" class="btn-danger big">Sí, eliminar</button>
+        <button id="btnConfirmNo" class="btn-primary big">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Alerta -->
+  <div id="modalAlert" class="modal">
+    <div class="modal-content alert">
+      <h2 id="alertMessage">Mensaje aquí</h2>
+      <div class="modal-actions">
+        <button id="btnAlertOk" class="btn-primary big">Aceptar</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

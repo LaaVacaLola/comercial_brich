@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportes de Ventas (Administrador)</title>
+  <link rel="stylesheet" href="../css/reportes_admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="../js/reportes_admin.js"></script>
+</head>
+<body>
+  <!-- 🔹 Navbar -->
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">⬅ Volver al Dashboard</a>
+  </header>
+
+  <main class="container">
+    <h1>📊 Reportes de Ventas (Administrador)</h1>
+    <p class="subtitle">Visualiza, analiza y exporta las métricas de tus ventas</p>
+
+    <!-- 🔹 Filtros -->
+    <section class="filters">
+      <input type="date" id="fromDate">
+      <input type="date" id="toDate">
+      <select>
+        <option>Todos los Proveedores</option>
+        <option>Proveedor 1</option>
+        <option>Proveedor 2</option>
+      </select>
+      <select>
+        <option>Todos los Clientes</option>
+        <option>Cliente 1</option>
+        <option>Cliente 2</option>
+      </select>
+      <select>
+        <option>Todas las Regiones</option>
+        <option>Región 1</option>
+        <option>Región 2</option>
+      </select>
+      <button class="btn-primary">🔍 Generar</button>
+    </section>
+
+    <!-- 🔹 Resumen -->
+    <section class="resumen">
+      <h2>Resumen</h2>
+      <div class="export-buttons">
+        <button class="btn-export excel">📗 Excel</button>
+        <button class="btn-export pdf">📕 PDF</button>
+      </div>
+    </section>
+
+    <!-- 🔹 Gráficos -->
+    <!-- 🔹 Reportes -->
+    <section class="reports-grid">
+    <div class="report-card full">
+        <h3>Ventas por Proveedor</h3>
+        <canvas id="ventasProveedorChart"></canvas>
+    </div>
+    <div class="report-card full">
+        <h3>Compras por Cliente</h3>
+        <canvas id="comprasClienteChart"></canvas>
+    </div>
+    <div class="report-card full">
+        <h3>Ventas por Región</h3>
+        <canvas id="ventasRegionChart"></canvas>
+    </div>
+    </section>
+
+
+    <!-- 🔹 Tabla -->
+    <section class="table-wrapper">
+      <h2>Órdenes encontradas</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Folio</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OC-2025-01001</td>
+            <td>Hospital Regional</td>
+            <td>2025-09-10</td>
+            <td>$450.000</td>
+            <td><button class="btn-secondary">Ver</button></td>
+          </tr>
+          <tr>
+            <td>OC-2025-01002</td>
+            <td>Municipalidad de Arica</td>
+            <td>2025-09-09</td>
+            <td>$1.200.000</td>
+            <td><button class="btn-secondary">Ver</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+    <!-- Modal Detalle Orden -->
+    <div id="orderModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>📋 Detalle de Orden</h2>
+        <div id="orderDetails"></div>
+    </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,233 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f5f8fc;
+  margin: 0;
+  color: #333;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #0a2f6b, #1f4e79);
+  padding: 12px 25px;
+  color: white;
+}
+.navbar .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 20px;
+}
+.navbar .logo img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #fff;
+  padding: 4px;
+}
+.btn-back {
+  background: #e74c3c;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.btn-back:hover { background: #c0392b; }
+
+/* Container */
+.container {
+  padding: 2rem;
+  text-align: center;
+}
+.container h1 { font-size: 2rem; color: #0a2f6b; }
+.subtitle { color: #555; margin-bottom: 2rem; }
+
+/* Caja de filtros */
+.filters {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+/* Inputs y select */
+.filters input,
+.filters select {
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  min-width: 200px;
+  transition: all 0.2s ease;
+}
+
+.filters input:focus,
+.filters select:focus {
+  border-color: #1f4e79;
+  box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.2);
+  outline: none;
+}
+
+/* Botón Filtrar */
+.filters .btn-primary {
+  background: linear-gradient(90deg, #0a2f6b, #1f4e79);
+  color: white;
+  padding: 14px 30px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+
+.filters .btn-primary:hover {
+  background: linear-gradient(90deg, #1f4e79, #0a2f6b);
+  transform: translateY(-3px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters input,
+  .filters select,
+  .filters .btn-primary {
+    width: 100%;
+  }
+}
+/* Tabla */
+.table-wrapper {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+th, td {
+  padding: 14px;
+  text-align: center;
+}
+th {
+  background: #0a2f6b;
+  color: white;
+}
+tr:nth-child(even) { background: #f9fbff; }
+
+/* Estados */
+.status {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+.status.pending { background: #f39c12; color: white; }
+.status.success { background: #27ae60; color: white; }
+.status.danger { background: #e74c3c; color: white; }
+
+/* Botones */
+button {
+  border: none;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+.btn-success { background: #27ae60; color: white; }
+.btn-success:hover { background: #1e8449; }
+.btn-danger { background: #e74c3c; color: white; }
+.btn-danger:hover { background: #c0392b; }
+.btn-secondary { background: #34495e; color: white; }
+.btn-secondary:hover { background: #2c3e50; }
+
+/* Columna Acciones */
+/* Asegura que la columna Acciones tenga el mismo tamaño */
+th:nth-child(7),
+td:nth-child(7) {
+  width: 280px; /* ajusta según el tamaño que quieras */
+}
+td .acciones {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+td .acciones button {
+  flex: 1;
+  min-width: 90px;   /* mismo ancho */
+  text-align: center;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 14px;
+  max-width: 500px;
+  width: 90%;
+  text-align: left;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  animation: fadeIn 0.3s ease-in-out;
+}
+.close-btn {
+  float: right;
+  font-size: 20px;
+  cursor: pointer;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+#orderDetails p {
+  margin: 8px 0;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+#orderDetails strong {
+  color: #0a2f6b;
+  display: inline-block;
+  width: 140px; /* 🔹 columnas alineadas */
+}
+/* Columna Acciones */
+td .acciones {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+td .acciones button {
+  min-width: 90px; /* 🔹 mismo ancho en todos los botones */
+  text-align: center;
+}

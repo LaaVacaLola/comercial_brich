@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo Cliente</title>
+  <link rel="stylesheet" href="../css/catalogo_cliente.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- 🔹 Barra superior -->
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo" class="logo-img">
+      <span>Comercial Brich</span>
+    </div>
+
+    <!-- 🔹 Carrito -->
+    <div class="cart" id="cartBtn">
+      <span id="cartCount">0</span> 🛒 Carrito
+    </div>
+  </header>
+
+  <!-- Header del catálogo -->
+  <section class="catalogo-header">
+    <h2 id="resultados-count">0 Productos</h2>
+
+    <div class="catalogo-controls">
+      <input type="text" id="searchBar" placeholder="🔍 Buscar productos..." />
+      <button id="filterBtn" class="control-btn">Mostrar Filtros ⚙️</button>
+      <select id="sortSelect" class="control-select">
+        <option value="default">Ordenar por</option>
+        <option value="precio-asc">Precio: Menor a Mayor</option>
+        <option value="precio-desc">Precio: Mayor a Menor</option>
+        <option value="nombre-asc">Nombre: A-Z</option>
+        <option value="nombre-desc">Nombre: Z-A</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Grilla de productos -->
+  <main class="catalogo-grid" id="productosGrid"></main>
+
+  <!-- Modal detalle producto -->
+  <div id="productoModal" class="modal">
+    <div class="modal-content modal-producto">
+      <span class="close" id="closeModal">&times;</span>
+      <img id="modalImg" src="" alt="Producto" />
+      <h2 id="modalNombre"></h2>
+      <p id="modalDescripcion"></p>
+      <p class="precio">Precio: <span id="modalPrecio"></span></p>
+    </div>
+  </div>
+
+<!-- Modal del carrito -->
+<div id="cartModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="closeCart">&times;</span>
+    <h2>🛒 Carrito de Compras</h2>
+
+    <div id="cartItems"></div>
+    <p id="cartTotal"><strong>Total:</strong> $0</p>
+
+    <div class="cart-actions">
+      <button id="exportExcel" class="btn-export">Exportar a Excel</button>
+      <button id="vaciarCarrito" class="btn-empty">Vaciar carrito</button>
+    </div>
+
+  </div>
+</div>
+
+  <!-- Modal selección región -->
+  <div id="regionModal" class="modal">
+    <div class="modal-content">
+      <h2>Selecciona tu Región</h2>
+      <p>Elige la región donde quieres ver los productos:</p>
+      <select id="regionSelect">
+        <option value="">-- Selecciona --</option>
+        <option value="Arica y Parinacota">Arica y Parinacota</option>
+        <option value="Antofagasta">Antofagasta</option>
+        <option value="Tarapacá">Tarapacá</option>
+      </select>
+      <button id="confirmRegion" class="btn-confirm">Confirmar</button>
+    </div>
+  </div>
+
+  <!-- Panel lateral filtros -->
+  <div id="filterPanel" class="filter-panel">
+    <div class="filter-header">
+      <h3>Filtros</h3>
+      <span class="close" id="closeFilter">&times;</span>
+    </div>
+    <div class="filter-body">
+      <label for="priceRange">Rango de precio:</label>
+      <input type="range" id="priceRange" min="0" max="10000" step="500" value="10000">
+      <p>Hasta: $<span id="priceValue">10000</span></p>
+      <button id="applyFilters" class="control-btn">Aplicar filtros</button>
+    </div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="../js/catalogo_cliente.js"></script>
+
+</body>
+</html>

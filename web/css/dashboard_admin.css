@@ -1,0 +1,286 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f5f8fc;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #0a2f6b, #1f4e79);
+  padding: 12px 25px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.navbar .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.navbar .logo img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #fff;
+  padding: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+.btn-logout {
+  background: #e74c3c; /* rojo fuerte */
+  color: white;
+  border: none;
+  padding: 12px 28px;   /* mismo tamaño que btn-back */
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+.btn-logout:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+}
+
+/* Container */
+.container { padding: 2rem; text-align: center; }
+.container h1 { font-size: 2rem; color: #0a2f6b; }
+.subtitle { color: #555; margin-bottom: 2rem; }
+
+/* 🔹 Tarjetas de accesos rápidos */
+.quick-access {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin: 2rem 0;
+}
+
+.access-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  text-align: center;
+  cursor: pointer;
+}
+
+.access-card:hover {
+  transform: translateY(-6px) scale(1.03);   /* 🔹 se eleva y crece un poco */
+  box-shadow: 0 10px 18px rgba(0,0,0,0.2);  /* 🔹 sombra más fuerte */
+}
+
+/* 🔹 Títulos dentro de cada tarjeta */
+.access-card h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0a2f6b;
+}
+
+/* 🔹 Texto secundario */
+.access-card p {
+  margin-top: 8px;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+/* 🔹 Links limpios (sin subrayado) */
+.quick-access a {
+  text-decoration: none;
+  color: inherit;
+  display: block; /* hace que toda la tarjeta sea clickeable */
+}
+/* Charts */
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-bottom: 2rem;
+}
+.chart-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.chart-card h2 { margin-bottom: 1rem; color: #1f4e79; }
+
+/* KPIs */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: transform 0.3s, background 0.3s;
+}
+.card:hover {
+  transform: translateY(-4px);
+  background: #f1f5ff;
+}
+.card h3 { color: #0a2f6b; }
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+.btn-danger {
+  background: #dc3545; color: white; padding: 10px 20px;
+  border: none; border-radius: 6px; margin: 5px;
+}
+.btn-secondary {
+  background: #ddd; color: #333; padding: 10px 20px;
+  border: none; border-radius: 6px; margin: 5px;
+}
+/* Ajuste tamaño charts */
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+  margin-top: 2rem;
+}
+
+.chart-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;
+}
+.chart-card canvas {
+  max-height: 300px; /* 🔹 más compacto */
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(6px);
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Contenido */
+.modal-content {
+  background: #fff;
+  padding: 2.5rem;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 430px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  animation: scaleUp 0.35s ease;
+}
+
+/* Ícono animado (puerta) */
+.modal-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1.5rem;
+  animation: bounce 1.5s infinite ease-in-out;
+}
+
+/* Título */
+.modal-content h2 {
+  margin-bottom: 0.7rem;
+  color: #0a2f6b;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+/* Texto */
+.modal-content p {
+  margin-bottom: 2rem;
+  color: #555;
+  font-size: 1rem;
+}
+
+/* Acciones */
+.modal-actions {
+  display: flex;
+  justify-content: space-around;
+  gap: 15px;
+}
+
+/* Botones */
+.btn-confirm {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 14px 26px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
+  flex: 1;
+}
+.btn-confirm:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+}
+
+.btn-cancel {
+  background: #f1f1f1;
+  color: #333;
+  border: none;
+  padding: 14px 26px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.15s ease;
+  flex: 1;
+}
+.btn-cancel:hover {
+  background: #ddd;
+  transform: scale(1.05);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from { opacity: 0; } 
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}

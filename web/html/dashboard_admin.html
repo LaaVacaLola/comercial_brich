@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Administrativo</title>
+  <link rel="stylesheet" href="../css/dashboard_admin.css">
+  <script src="../libs/chart.umd.min.js"></script>
+  <script defer src="../js/dashboard_admin.js"></script>
+</head>
+<body>
+  <!-- 🔹 Navbar -->
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <button id="logoutBtn" class="btn-logout">Cerrar sesión</button>
+  </header>
+
+  <!-- 🔹 Bienvenida -->
+  <main class="container">
+    <h1 id="welcomeText">Bienvenido(a)</h1>
+    <p class="subtitle">Tu panel de gestión administrativa</p>
+
+    <!-- 🔹 Accesos rápidos -->
+    <section class="quick-access">
+      <a href="catalogo_admin.html" class="access-card">
+        <h3>📦 Catálogo</h3>
+        <p>Gestiona productos y stock</p>
+      </a>
+      <a href="ordenes_admin.html" class="access-card">
+        <h3>📑 Órdenes</h3>
+        <p>Revisa y administra órdenes</p>
+      </a>
+      <a href="reportes_admin.html" class="access-card">
+        <h3>📊 Reportes</h3>
+        <p>Estadísticas y análisis</p>
+      </a>
+      <a href="gestion_usuario.html" class="access-card">
+        <h3>👥 Gestión de Usuarios</h3>
+        <p>Administra usuarios y roles</p>
+      </a>
+    </section>
+
+<!-- 🔹 Gráficos -->
+<section class="charts">
+  <div class="chart-card">
+    <h2>📈 Ventas del mes</h2>
+    <canvas id="ventasChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <h2>👥 Distribución de usuarios</h2>
+    <canvas id="usuariosChart"></canvas>
+  </div>
+</section>
+
+    <!-- 🔹 KPIs debajo -->
+    <section class="cards">
+      <div class="card">
+        <h3 id="ventasMes">💰 $3.525.600</h3>
+        <p>Ventas del mes</p>
+      </div>
+      <div class="card">
+        <h3 id="pendientesEntrega">📦12</h3>
+        <p>OC pendientes de entrega</p>
+      </div>
+      <div class="card">
+        <h3 id="pendientesAceptacion">🛒9</h3>
+        <p>Órdenes por aprobar</p>
+      </div>
+      <div class="card">
+        <h3 id="aceptadas">✅16</h3>
+        <p>Órdenes aceptadas</p>
+      </div>
+    </section>
+  </main>
+
+<!-- 🔹 Modal de Logout -->
+<div id="logoutModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-icon">🚪</div>
+    <h2>¿Cerrar sesión?</h2>
+    <p>Se cerrará tu sesión actual y volverás al login.</p>
+    <div class="modal-actions">
+      <button id="confirmLogout" class="btn-confirm">Sí, cerrar sesión</button>
+      <button id="cancelLogout" class="btn-cancel">Cancelar</button>
+    </div>
+  </div>
+</div>
+

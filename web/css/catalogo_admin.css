@@ -1,0 +1,350 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f5f8fc;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #0a2f6b, #1f4e79);
+  padding: 12px 25px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.navbar .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 20px;
+}
+.navbar .logo img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #fff;
+  padding: 4px;
+}
+btn-back {
+  background: #1f4e79;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.3s, transform 0.2s;
+}
+.btn-back:hover {
+  background: #0a2f6b;
+  transform: translateX(-3px);
+}
+
+/* Contenido */
+.container { padding: 2rem; text-align: center; }
+.container h1 { font-size: 2rem; color: #0a2f6b; }
+.subtitle { color: #555; margin-bottom: 2rem; }
+
+/* Acciones */
+.actions-top {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 1.5rem;
+}
+.select-catalogo {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* Botones */
+.btn-primary {
+  background: #0a2f6b;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-primary:hover { background: #1f4e79; }
+
+.btn-warning {
+  background: #ffc107;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-warning:hover { background: #e0a800; }
+
+.btn-secondary {
+  background: #1f4e79;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-secondary:hover { background: #0a2f6b; }
+
+/* Tabla */
+.table-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+thead {
+  background: #0a2f6b;
+  color: white;
+}
+th, td {
+  padding: 12px;
+  text-align: center;
+}
+tbody tr:nth-child(even) {
+  background: #f9fbff;
+}
+
+/* Estados */
+.status {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.status.success { background: #28a745; color: white; }
+.status.danger { background: #6c757d; color: white; }
+
+/* Botón Oferta */
+.btn-offer {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+.btn-offer:hover {
+  background: #0056b3;
+}
+
+/* === Modal Oferta === */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 14px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  animation: scaleUp 0.35s ease;
+}
+
+.modal-content h2 {
+  margin-bottom: 1rem;
+  color: #0a2f6b;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.modal-content label {
+  display: block;
+  text-align: left;
+  margin-top: 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border 0.2s ease;
+}
+.modal-content input:focus {
+  border: 1px solid #0a2f6b;
+  outline: none;
+}
+
+/* Botón cerrar (X) */
+.close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 1.6rem;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.3s;
+}
+.close:hover {
+  color: #e74c3c;
+}
+
+/* Botón guardar */
+.btn-confirm {
+  background: #1f4e79;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1.5rem;
+  width: 100%;
+  transition: background 0.25s ease, transform 0.15s ease;
+}
+.btn-confirm:hover {
+  background: #163b5c;
+  transform: scale(1.05);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+/* Estilo botón volver al Dashboard */
+.btn-back {
+  display: inline-block;
+  background: #e74c3c; /* rojo fuerte */
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.btn-back:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+}
+/* === Filtros Catálogo (igual estilo que Órdenes) === */
+.catalogo-filtros {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+/* Inputs y select */
+.catalogo-filtros select,
+.catalogo-filtros input {
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  min-width: 220px;
+  transition: all 0.2s ease;
+}
+
+.catalogo-filtros select:focus,
+.catalogo-filtros input:focus {
+  border-color: #1f4e79;
+  box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.2);
+  outline: none;
+}
+
+/* Botón Agregar Producto */
+.catalogo-filtros .btn-primary {
+  background: linear-gradient(90deg, #0a2f6b, #1f4e79);
+  color: white;
+  padding: 14px 30px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.catalogo-filtros .btn-primary:hover {
+  background: linear-gradient(90deg, #1f4e79, #0a2f6b);
+  transform: translateY(-3px);
+}
+
+/* Ícono dentro del botón */
+.catalogo-filtros .btn-primary i {
+  font-size: 1.2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .catalogo-filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .catalogo-filtros select,
+  .catalogo-filtros input,
+  .catalogo-filtros .btn-primary {
+    width: 100%;
+  }
+}
+.producto-img {
+  width: 55px;
+  height: 55px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #ddd;
+}
+.img-producto {
+  width: 55px;
+  height: 55px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 5px;
+}

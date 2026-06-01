@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de Productos (Admin)</title>
+  <link rel="stylesheet" href="../css/catalogo_admin.css">
+  <script defer src="../js/catalogo_admin.js"></script>
+</head>
+<body>
+
+  <!-- 🔹 Navbar -->
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">⬅ Volver al Dashboard</a>
+  </header>
+
+  <main class="container">
+    <h1>📦 Catálogo de Productos (Administrador)</h1>
+    <p class="subtitle">Gestiona productos, activa/desactiva y crea ofertas</p>
+
+    <!-- FILTROS Y AGREGAR -->
+    <section class="catalogo-filtros">
+      <select id="selectCatalogo" class="select-catalogo">
+        <option value="">Seleccionar producto del catálogo...</option>
+      </select>
+
+      <button id="btnAgregarProducto" class="btn-primary">
+        📦 + Agregar Producto
+      </button>
+    </section>
+
+    <!-- TABLA REAL -->
+    <section class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Imagen</th>
+            <th>Región</th>
+            <th>Nombre</th>
+            <th>Precio</th>
+            <th>Activo</th>
+            <th>Aprobado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody id="tablaProductos"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- MODAL OFERTA -->
+  <div id="ofertaModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+
+      <h2>Crear Oferta para <span id="productoNombre"></span></h2>
+
+      <form id="ofertaForm">
+        <label>Monto de oferta</label>
+        <input id="ofertaMonto" type="number" required>
+
+        <label>Fecha inicio</label>
+        <input id="ofertaInicio" type="date" required>
+
+        <label>Fecha término</label>
+        <input id="ofertaFin" type="date" required>
+
+        <button type="submit" class="btn-confirm">💾 Guardar Oferta</button>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>

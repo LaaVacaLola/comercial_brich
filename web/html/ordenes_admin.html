@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Órdenes de Compra (Administrador)</title>
+  <link rel="stylesheet" href="../css/ordenes_admin.css">
+  <script defer src="../js/ordenes_admin.js"></script>
+</head>
+<body>
+  <!-- 🔹 Navbar -->
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">← Volver al Dashboard</a>
+  </header>
+
+  <main class="container">
+    <h1>🛒 Órdenes de Compra (Administrador)</h1>
+    <p class="subtitle">Gestiona, revisa y administra órdenes de compra</p>
+
+    <!-- 🔹 Filtros -->
+    <section class="filters">
+      <input type="text" id="searchInput" placeholder="🔍 Buscar por folio o cliente...">
+      <select id="statusFilter">
+        <option value="todos">Todos</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="aceptada">Aceptada</option>
+        <option value="rechazada">Rechazada</option>
+      </select>
+      <input type="date" id="fromDate">
+      <input type="date" id="toDate">
+      <button class="btn-primary">Filtrar</button>
+    </section>
+
+    <!-- 🔹 Tabla -->
+    <section class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Folio</th>
+            <th>Cliente</th>
+            <th>Organismo</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTable">
+          <tr>
+            <td>OC-2025-00123</td>
+            <td>Municipalidad de Arica</td>
+            <td>Cárcel de Arica</td>
+            <td>2025-09-08</td>
+            <td>$1.250.000</td>
+            <td><span class="status pending">Pendiente</span></td>
+            <td>
+            <div class="acciones">
+                <button class="btn-success">Aceptar</button>
+                <button class="btn-danger">Rechazar</button>
+                <button class="btn-secondary view-btn" data-id="1">Ver</button>
+            </div>
+            </td>
+          </tr>
+          <tr>
+            <td>OC-2025-00124</td>
+            <td>Hospital Regional</td>
+            <td>CCP</td>
+            <td>2025-09-07</td>
+            <td>$320.000</td>
+            <td><span class="status success">Aceptada</span></td>
+            <td>
+                <div class="acciones">
+                    <button style="visibility:hidden;">---</button>
+                    <button style="visibility:hidden;">---</button>
+                    <button class="btn-secondary view-btn" data-id="2">Ver</button>
+                </div>    
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+    <!-- Modal Detalle -->
+    <div id="orderModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>📋 Detalle de Orden</h2>
+        <div id="orderDetails"></div>
+        <div class="modal-actions">
+        <button class="btn-primary">Aceptar</button>
+        <button class="btn-danger">Rechazar</button>
+        </div>
+    </div>
+    </div>
+</body>
+</html>
