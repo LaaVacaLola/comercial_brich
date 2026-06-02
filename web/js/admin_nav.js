@@ -45,6 +45,7 @@
         links: [
           { href: "/html/gestion_usuario.html", label: "Usuarios" },
           { href: "/html/ajustes_mercado.html", label: "Mercado API" },
+          { href: "/html/ajustes_mercado_jobs.html", label: "Jobs Mercado" },
         ],
       },
     ];

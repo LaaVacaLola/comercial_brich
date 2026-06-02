@@ -260,6 +260,34 @@ body {
   width: 0%;
 }
 
+.progress-track.mini {
+  height: 8px;
+  margin: 6px 0 0;
+  min-width: 120px;
+}
+
+.job-progress-cell strong {
+  color: #0a2f6b;
+}
+
+.job-logs-cell {
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.job-logs-cell div + div {
+  border-top: 1px solid rgba(226, 232, 240, 0.16);
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+.job-logs-cell strong {
+  color: #93c5fd;
+  margin-right: 8px;
+}
+
 .progress-stats {
   display: flex;
   flex-wrap: wrap;
@@ -698,6 +726,12 @@ button:disabled {
 
 .analytics-table-heading h2 {
   margin: 0;
+}
+
+.table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .settings-grid {

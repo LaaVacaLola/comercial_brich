@@ -3,6 +3,9 @@ const { randomUUID } = require("crypto");
 const MercadoPublicoConfig = require("../models/MercadoPublicoConfig");
 const MercadoPublicoProveedor = require("../models/MercadoPublicoProveedor");
 const MercadoPublicoCliente = require("../models/MercadoPublicoCliente");
+const MercadoPublicoOrdenCache = require("../models/MercadoPublicoOrdenCache");
+const MercadoPublicoJob = require("../models/MercadoPublicoJob");
+const MercadoPublicoAnalisis = require("../models/MercadoPublicoAnalisis");
 
 const BASE_URL = "https://api.mercadopublico.cl/servicios/v1";
 const PUBLIC_URL = `${BASE_URL}/publico`;
@@ -33,7 +36,13 @@ const ORDEN_ESTADOS = new Set([
 const CHILECOMPRA_REQUEST_DELAY_MS = 1200;
 const CHILECOMPRA_429_RETRY_DELAY_MS = 8000;
 const CHILECOMPRA_MAX_RETRIES = 2;
+const OC_DOWNLOAD_MAX_PER_ENTITY = 1000;
 const reportJobs = new Map();
+const downloadJobQueue = [];
+let downloadJobActive = false;
+const ocProcessingQueue = [];
+let ocProcessingActiveCount = 0;
+const OC_PROCESSING_WORKERS = 2;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -519,7 +528,13 @@ async function guardarProveedorObservado(payload, updatedBy) {
   }
 
   await proveedor.save();
-  return resumenProveedorGuardado(proveedor.toObject());
+  const resumen = resumenProveedorGuardado(proveedor.toObject());
+  resumen.descargaJob = await iniciarDescargaOrdenesJob({
+    entidadTipo: "proveedor",
+    entidadCodigo: resumen.codigoProveedor,
+    entidadNombre: resumen.nombreProveedor,
+  });
+  return resumen;
 }
 
 function resumenProveedorGuardado(proveedor) {
@@ -686,7 +701,13 @@ async function guardarClienteObservado(payload, updatedBy) {
   }
 
   await cliente.save();
-  return resumenClienteGuardado(cliente.toObject());
+  const resumen = resumenClienteGuardado(cliente.toObject());
+  resumen.descargaJob = await iniciarDescargaOrdenesJob({
+    entidadTipo: "cliente",
+    entidadCodigo: resumen.codigoOrganismo,
+    entidadNombre: resumen.nombreOrganismo,
+  });
+  return resumen;
 }
 
 function resumenClienteGuardado(cliente) {
@@ -754,13 +775,52 @@ function lastYearApiDates() {
   );
 }
 
-async function listarOrdenesPorEntidadUltimoAno(paramsPorDia, maxOrdenes, progress) {
+function lastYearApiDatesDescending(fromDate) {
+  const today = new Date();
+  const cutoff = new Date();
+  cutoff.setDate(today.getDate() - 364);
+  const start = fromDate ? new Date(fromDate) : today;
+  if (Number.isNaN(start.getTime()) || start > today) start.setTime(today.getTime());
+
+  const fechas = [];
+  const cursor = new Date(start);
+  while (cursor >= cutoff) {
+    fechas.push(formatApiDate(cursor));
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return fechas;
+}
+
+async function fechaContinuacionCache(entidadTipo, entidadCodigo) {
+  const oldest = await MercadoPublicoOrdenCache.findOne({
+    origenes: {
+      $elemMatch: {
+        tipo: entidadTipo,
+        codigo: entidadCodigo,
+      },
+    },
+    fecha: { $ne: null },
+  })
+    .sort({ fecha: 1 })
+    .lean();
+
+  if (!oldest?.fecha) return null;
+
+  const next = new Date(oldest.fecha);
+  next.setDate(next.getDate() - 1);
+  return next;
+}
+
+async function listarOrdenesPorEntidadUltimoAno(paramsPorDia, maxOrdenes, progress, cursorDate, cancelJobId) {
   const ticket = await getTicket();
-  const fechas = lastYearApiDates();
+  const fechas = lastYearApiDatesDescending(cursorDate);
   const byCode = new Map();
 
   for (const fecha of fechas) {
+    if (cancelJobId && await isJobCancelled(cancelJobId)) break;
+
     try {
+      if (cancelJobId) await appendJobLog(cancelJobId, `Consultando OC fecha ${fecha}`);
       const data = await requestChileCompra(`${PUBLIC_URL}/ordenesdecompra.json`, {
         fecha,
         estado: "todos",
@@ -768,7 +828,10 @@ async function listarOrdenesPorEntidadUltimoAno(paramsPorDia, maxOrdenes, progre
         ...paramsPorDia,
       });
 
-      getListado(data).forEach((orden) => {
+      const listado = getListado(data);
+      if (cancelJobId) await appendJobLog(cancelJobId, `Fecha ${fecha}: ${listado.length} OC recibidas`);
+
+      listado.forEach((orden) => {
         const code = orden.Codigo || orden.CodigoOC;
         if (code && byCode.size < maxOrdenes) byCode.set(code, orden);
       });
@@ -781,6 +844,7 @@ async function listarOrdenesPorEntidadUltimoAno(paramsPorDia, maxOrdenes, progre
       if (byCode.size >= maxOrdenes) break;
     } catch (err) {
       if (progress) progress.consultasOmitidas += 1;
+      if (cancelJobId) await appendJobLog(cancelJobId, `Fecha ${fecha} omitida: ${err.message}`);
       if (err.status === 429) continue;
     }
   }
@@ -788,12 +852,12 @@ async function listarOrdenesPorEntidadUltimoAno(paramsPorDia, maxOrdenes, progre
   return Array.from(byCode.values());
 }
 
-async function listarOrdenesProveedorUltimoAno(codigoProveedor, maxOrdenes, progress) {
-  return listarOrdenesPorEntidadUltimoAno({ CodigoProveedor: codigoProveedor }, maxOrdenes, progress);
+async function listarOrdenesProveedorUltimoAno(codigoProveedor, maxOrdenes, progress, cursorDate, cancelJobId) {
+  return listarOrdenesPorEntidadUltimoAno({ CodigoProveedor: codigoProveedor }, maxOrdenes, progress, cursorDate, cancelJobId);
 }
 
-async function listarOrdenesClienteUltimoAno(codigoOrganismo, maxOrdenes, progress) {
-  return listarOrdenesPorEntidadUltimoAno({ CodigoOrganismo: codigoOrganismo }, maxOrdenes, progress);
+async function listarOrdenesClienteUltimoAno(codigoOrganismo, maxOrdenes, progress, cursorDate, cancelJobId) {
+  return listarOrdenesPorEntidadUltimoAno({ CodigoOrganismo: codigoOrganismo }, maxOrdenes, progress, cursorDate, cancelJobId);
 }
 
 async function obtenerDetalleOrdenSeguro(codigo) {
@@ -837,6 +901,470 @@ function resumenOrdenAnalitica(orden) {
     },
     items: Array.isArray(orden?.Items?.Listado) ? orden.Items.Listado : [],
     errorDetalle: orden.errorDetalle || null,
+  };
+}
+
+function publicPersistentJob(job) {
+  return {
+    id: String(job._id),
+    tipo: job.tipo,
+    status: job.status,
+    entidadTipo: job.entidadTipo,
+    entidadCodigo: job.entidadCodigo,
+    entidadNombre: job.entidadNombre,
+    progress: job.progress,
+    logs: (job.logs || []).slice(-8),
+    result: job.result,
+    error: job.error,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+  };
+}
+
+async function appendJobLog(jobId, message) {
+  const log = {
+    at: new Date(),
+    message: String(message || "").slice(0, 500),
+  };
+  console.log(`[MercadoPublicoJob ${jobId}] ${log.message}`);
+  await MercadoPublicoJob.findByIdAndUpdate(jobId, {
+    $push: {
+      logs: {
+        $each: [log],
+        $slice: -60,
+      },
+    },
+  });
+}
+
+function ordenCacheFromRaw(raw, origen) {
+  const resumen = resumenOrdenAnalitica(raw);
+  return {
+    codigo: resumen.codigo,
+    proveedorCodigo: resumen.proveedor.codigo || "",
+    proveedorNombre: resumen.proveedor.nombre || "",
+    compradorCodigo: resumen.comprador.codigoOrganismo || "",
+    compradorNombre: resumen.comprador.nombreOrganismo || "",
+    fecha: cleanDateValue(raw?.Fechas?.FechaEnvio || raw?.Fechas?.FechaCreacion),
+    estado: resumen.estado,
+    total: resumen.total,
+    origenes: [origen],
+    raw,
+    downloadedAt: new Date(),
+  };
+}
+
+async function guardarOrdenCache(raw, origen) {
+  const data = ordenCacheFromRaw(raw, origen);
+  if (!data.codigo) return false;
+
+  const current = await MercadoPublicoOrdenCache.findOne({ codigo: data.codigo }).lean();
+  const origenes = current?.origenes || [];
+  const exists = origenes.some((item) => item.tipo === origen.tipo && item.codigo === origen.codigo);
+  if (!exists) origenes.push(origen);
+
+  await MercadoPublicoOrdenCache.findOneAndUpdate(
+    { codigo: data.codigo },
+    {
+      $set: {
+        ...data,
+        origenes,
+      },
+    },
+    { upsert: true, new: true }
+  );
+
+  return true;
+}
+
+async function isJobCancelled(jobId) {
+  const job = await MercadoPublicoJob.findById(jobId).select("status").lean();
+  return !job || job.status === "cancelled";
+}
+
+async function updatePersistentJob(jobId, patch) {
+  await MercadoPublicoJob.findByIdAndUpdate(jobId, {
+    $set: {
+      ...patch,
+    },
+  });
+}
+
+async function crearProcesamientoOrdenJob({ codigo, origen, parentJobId }) {
+  const existing = await MercadoPublicoJob.findOne({
+    tipo: "procesar_oc",
+    entidadCodigo: codigo,
+    status: { $in: ["queued", "running"] },
+  }).lean();
+
+  if (existing) return existing;
+
+  const job = await MercadoPublicoJob.create({
+    tipo: "procesar_oc",
+    status: "queued",
+    entidadTipo: "analisis",
+    entidadCodigo: codigo,
+    entidadNombre: codigo,
+    params: {
+      codigo,
+      origen,
+      parentJobId,
+    },
+    progress: {
+      porcentaje: 0,
+      totalObjetivo: 1,
+      consultasProcesadas: 0,
+      consultasOmitidas: 0,
+      ocEncontradas: 1,
+      ocProcesadas: 0,
+      ocOmitidas: 0,
+    },
+  });
+
+  if (parentJobId) await appendJobLog(parentJobId, `OC ${codigo}: job de procesamiento creado`);
+  enqueueProcesamientoOrdenJob(String(job._id));
+  return job.toObject();
+}
+
+function enqueueProcesamientoOrdenJob(jobId) {
+  if (!ocProcessingQueue.includes(jobId)) ocProcessingQueue.push(jobId);
+  runProcesamientoOrdenQueue().catch(() => {});
+}
+
+async function runProcesamientoOrdenQueue() {
+  while (ocProcessingActiveCount < OC_PROCESSING_WORKERS && ocProcessingQueue.length) {
+    const jobId = ocProcessingQueue.shift();
+    ocProcessingActiveCount += 1;
+
+    ejecutarProcesamientoOrdenJob(jobId)
+      .catch(() => {})
+      .finally(() => {
+        ocProcessingActiveCount -= 1;
+        runProcesamientoOrdenQueue().catch(() => {});
+      });
+  }
+}
+
+async function ejecutarProcesamientoOrdenJob(jobId) {
+  const job = await MercadoPublicoJob.findById(jobId);
+  if (!job || job.status === "cancelled" || job.status === "complete") return;
+
+  const parentJobId = job.params?.parentJobId;
+  if (parentJobId && await isJobCancelled(parentJobId)) {
+    job.status = "cancelled";
+    await job.save();
+    return;
+  }
+
+  job.status = "running";
+  await job.save();
+  await appendJobLog(jobId, `Worker OC procesando detalle ${job.params?.codigo || job.entidadCodigo}`);
+
+  try {
+    const codigo = job.params?.codigo || job.entidadCodigo;
+    const detalle = await obtenerDetalleOrdenSeguro(codigo);
+
+    if (detalle.errorDetalle) {
+      job.progress.ocOmitidas = 1;
+      await appendJobLog(jobId, `OC ${codigo} omitida: ${detalle.errorDetalle}`);
+    } else {
+      await guardarOrdenCache(detalle, job.params?.origen || {
+        tipo: "proveedor",
+        codigo: "",
+        nombre: "",
+      });
+      job.progress.ocProcesadas = 1;
+      await appendJobLog(jobId, `OC ${codigo} guardada en cache`);
+    }
+
+    job.progress.consultasProcesadas = 1;
+    job.progress.porcentaje = 100;
+    job.status = "complete";
+    job.result = {
+      codigo,
+      ocProcesadas: job.progress.ocProcesadas,
+      ocOmitidas: job.progress.ocOmitidas,
+    };
+    await job.save();
+  } catch (err) {
+    job.status = "error";
+    job.error = err.message || "No fue posible procesar OC";
+    job.progress.consultasOmitidas += 1;
+    await job.save();
+  }
+}
+
+async function iniciarDescargaOrdenesJob({ entidadTipo, entidadCodigo, entidadNombre }) {
+  const existing = await MercadoPublicoJob.findOne({
+    tipo: "descarga_oc",
+    entidadTipo,
+    entidadCodigo,
+    status: { $in: ["queued", "running"] },
+  }).lean();
+
+  if (existing) return publicPersistentJob(existing);
+
+  const job = await MercadoPublicoJob.create({
+    tipo: "descarga_oc",
+    status: "queued",
+    entidadTipo,
+    entidadCodigo,
+    entidadNombre,
+    params: {
+      rango: "ultimo_ano",
+      maxOrdenes: OC_DOWNLOAD_MAX_PER_ENTITY,
+    },
+    progress: {
+      porcentaje: 0,
+      totalObjetivo: OC_DOWNLOAD_MAX_PER_ENTITY,
+      consultasProcesadas: 0,
+      consultasOmitidas: 0,
+      ocEncontradas: 0,
+      ocProcesadas: 0,
+      ocOmitidas: 0,
+    },
+  });
+
+  enqueueDescargaOrdenesJob(String(job._id));
+  return publicPersistentJob(job);
+}
+
+function enqueueDescargaOrdenesJob(jobId) {
+  if (!downloadJobQueue.includes(jobId)) downloadJobQueue.push(jobId);
+  runDescargaOrdenesQueue().catch(() => {});
+}
+
+async function runDescargaOrdenesQueue() {
+  if (downloadJobActive) return;
+  downloadJobActive = true;
+
+  try {
+    while (downloadJobQueue.length) {
+      const jobId = downloadJobQueue.shift();
+      await ejecutarDescargaOrdenesJob(jobId);
+    }
+  } finally {
+    downloadJobActive = false;
+  }
+}
+
+async function ejecutarDescargaOrdenesJob(jobId) {
+  const job = await MercadoPublicoJob.findById(jobId);
+  if (!job || ["complete", "cancelled", "error"].includes(job.status)) return;
+
+  job.status = "running";
+  await job.save();
+  await appendJobLog(jobId, `Worker principal inicio descarga ${job.entidadTipo} ${job.entidadCodigo} - ${job.entidadNombre}`);
+
+  const progress = job.progress;
+  const params = job.entidadTipo === "cliente"
+    ? { CodigoOrganismo: job.entidadCodigo }
+    : { CodigoProveedor: job.entidadCodigo };
+
+  try {
+    const cursorDate = await fechaContinuacionCache(job.entidadTipo, job.entidadCodigo);
+    await appendJobLog(jobId, cursorDate
+      ? `Continuando desde ${cursorDate.toISOString().slice(0, 10)} hacia atras`
+      : "Sin cache previo: comenzando desde la OC mas nueva hacia atras");
+    const ordenesBase = await listarOrdenesPorEntidadUltimoAno(params, OC_DOWNLOAD_MAX_PER_ENTITY, progress, cursorDate, jobId);
+    if (await isJobCancelled(jobId)) {
+      await updatePersistentJob(jobId, { status: "cancelled", progress });
+      return;
+    }
+    await updatePersistentJob(jobId, { progress });
+
+    const codigos = ordenesBase
+      .map((orden) => orden.Codigo || orden.CodigoOC)
+      .filter(Boolean)
+      .slice(0, OC_DOWNLOAD_MAX_PER_ENTITY);
+
+    progress.totalObjetivo = codigos.length || OC_DOWNLOAD_MAX_PER_ENTITY;
+    progress.ocEncontradas = codigos.length;
+    await updatePersistentJob(jobId, { progress });
+    await appendJobLog(jobId, `${codigos.length} OC encontradas para encolar procesamiento`);
+
+    for (const codigo of codigos) {
+      if (await isJobCancelled(jobId)) {
+        await updatePersistentJob(jobId, { status: "cancelled", progress });
+        return;
+      }
+
+      await appendJobLog(jobId, `OC ${codigo}: descargando detalle`);
+      const detalle = await obtenerDetalleOrdenSeguro(codigo);
+
+      if (detalle.errorDetalle) {
+        progress.ocOmitidas += 1;
+        await appendJobLog(jobId, `OC ${codigo}: omitida (${detalle.errorDetalle})`);
+      } else {
+        const saved = await guardarOrdenCache(detalle, {
+          tipo: job.entidadTipo,
+          codigo: job.entidadCodigo,
+          nombre: job.entidadNombre,
+        });
+
+        if (saved) {
+          progress.ocProcesadas += 1;
+          await appendJobLog(jobId, `OC ${codigo}: guardada en cache`);
+        } else {
+          progress.ocOmitidas += 1;
+          await appendJobLog(jobId, `OC ${codigo}: omitida por datos insuficientes`);
+        }
+      }
+
+      progress.porcentaje = Math.min(100, Math.round(((progress.ocProcesadas + progress.ocOmitidas) / Math.max(1, progress.totalObjetivo)) * 100));
+      await updatePersistentJob(jobId, { progress });
+    }
+
+    await updatePersistentJob(jobId, {
+      status: "complete",
+      progress: { ...progress, porcentaje: 100 },
+      result: {
+        ocEncontradas: progress.ocEncontradas,
+        ocProcesadas: progress.ocProcesadas,
+        ocOmitidas: progress.ocOmitidas,
+      },
+    });
+    await appendJobLog(jobId, "Descarga finalizada. OC procesadas y cacheadas en el mismo job.");
+  } catch (err) {
+    await updatePersistentJob(jobId, {
+      status: "error",
+      error: err.message || "No fue posible descargar OC",
+      progress,
+    });
+    await appendJobLog(jobId, `Error descarga: ${err.message || "sin detalle"}`);
+  }
+}
+
+async function listarDescargaOrdenesJobs() {
+  const jobs = await MercadoPublicoJob.find({ tipo: "descarga_oc" })
+    .sort({ updatedAt: -1 })
+    .limit(100)
+    .lean();
+
+  return {
+    Cantidad: jobs.length,
+    Listado: jobs.map(publicPersistentJob),
+  };
+}
+
+async function cancelarJob(id) {
+  const job = await MercadoPublicoJob.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        status: "cancelled",
+        error: "Cancelado por usuario",
+      },
+    },
+    { new: true }
+  ).lean();
+
+  if (!job) {
+    const err = new Error("Job no encontrado");
+    err.status = 404;
+    throw err;
+  }
+
+  return publicPersistentJob(job);
+}
+
+async function sincronizarEntidadesGuardadas() {
+  const proveedores = await MercadoPublicoProveedor.find({}).lean();
+  const clientes = await MercadoPublicoCliente.find({}).lean();
+  const jobs = [];
+
+  for (const proveedor of proveedores) {
+    jobs.push(await iniciarDescargaOrdenesJob({
+      entidadTipo: "proveedor",
+      entidadCodigo: proveedor.codigoProveedor,
+      entidadNombre: proveedor.nombreProveedor,
+    }));
+  }
+
+  for (const cliente of clientes) {
+    jobs.push(await iniciarDescargaOrdenesJob({
+      entidadTipo: "cliente",
+      entidadCodigo: cliente.codigoOrganismo,
+      entidadNombre: cliente.nombreOrganismo,
+    }));
+  }
+
+  return {
+    Cantidad: jobs.length,
+    Listado: jobs,
+  };
+}
+
+async function listarOrdenesCacheResumen() {
+  const total = await MercadoPublicoOrdenCache.countDocuments({});
+  const latest = await MercadoPublicoOrdenCache.findOne({ fecha: { $ne: null } })
+    .sort({ fecha: -1 })
+    .lean();
+  const oldest = await MercadoPublicoOrdenCache.findOne({ fecha: { $ne: null } })
+    .sort({ fecha: 1 })
+    .lean();
+  const ordenes = await MercadoPublicoOrdenCache.find({})
+    .sort({ fecha: -1, updatedAt: -1 })
+    .limit(100)
+    .select("codigo proveedorNombre compradorNombre fecha estado total origenes downloadedAt updatedAt")
+    .lean();
+
+  return {
+    total,
+    ultimaFecha: latest?.fecha || null,
+    primeraFecha: oldest?.fecha || null,
+    Cantidad: ordenes.length,
+    Listado: ordenes.map((orden) => ({
+      codigo: orden.codigo,
+      proveedorNombre: orden.proveedorNombre,
+      compradorNombre: orden.compradorNombre,
+      fecha: orden.fecha,
+      estado: orden.estado,
+      total: orden.total,
+      origenes: orden.origenes,
+      downloadedAt: orden.downloadedAt,
+      updatedAt: orden.updatedAt,
+    })),
+  };
+}
+
+async function reanudarJobsPendientes() {
+  try {
+    const pendientes = await MercadoPublicoJob.find({
+      tipo: "descarga_oc",
+      status: { $in: ["queued", "running"] },
+    })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    pendientes.forEach((job) => {
+      enqueueDescargaOrdenesJob(String(job._id));
+    });
+
+    if (pendientes.length) {
+      console.log(`[MercadoPublicoJob] ${pendientes.length} jobs pendientes reanudados`);
+    }
+  } catch (err) {
+    console.error("[MercadoPublicoJob] No fue posible reanudar jobs pendientes:", err.message);
+  }
+}
+
+async function listarAnalisisGuardados() {
+  const analisis = await MercadoPublicoAnalisis.find({})
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+
+  return {
+    Cantidad: analisis.length,
+    Listado: analisis.map((item) => ({
+      id: item._id,
+      modoAnalisis: item.modoAnalisis,
+      filtros: item.filtros,
+      resumen: item.resumen,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    })),
   };
 }
 
@@ -891,55 +1419,28 @@ async function obtenerReportesOrdenesSeleccionadas(query = {}, progress) {
     };
   }
 
-  const ordenesBase = [];
-  if (modoAnalisis === "clientes") {
-    for (const codigoOrganismo of Array.from(clientesSeleccionados)) {
-      const restantes = maxOrdenes - ordenesBase.length;
-      if (restantes <= 0) break;
-      const ordenesCliente = await listarOrdenesClienteUltimoAno(codigoOrganismo, restantes, progress);
-      ordenesBase.push(...ordenesCliente);
-    }
-  } else {
-    for (const codigoProveedor of proveedoresSeleccionados) {
-      const restantes = maxOrdenes - ordenesBase.length;
-      if (restantes <= 0) break;
-      const ordenesProveedor = await listarOrdenesProveedorUltimoAno(codigoProveedor, restantes, progress);
-      ordenesBase.push(...ordenesProveedor);
-    }
+  const filter = modoAnalisis === "clientes"
+    ? { compradorCodigo: { $in: Array.from(clientesSeleccionados) } }
+    : { proveedorCodigo: { $in: proveedoresSeleccionados } };
+
+  if (modoAnalisis === "proveedores" && clientesSeleccionados) {
+    filter.compradorCodigo = { $in: Array.from(clientesSeleccionados) };
   }
 
-  const byCode = new Map();
-  ordenesBase.forEach((orden) => {
-    const code = orden.Codigo || orden.CodigoOC;
-    if (code) byCode.set(code, orden);
-  });
+  const cached = await MercadoPublicoOrdenCache.find(filter)
+    .sort({ fecha: -1, updatedAt: -1 })
+    .limit(maxOrdenes)
+    .lean();
 
-  const detalles = [];
-  const codigosDetalle = Array.from(byCode.keys()).slice(0, maxOrdenes);
   if (progress) {
-    progress.totalObjetivo = codigosDetalle.length || maxOrdenes;
-    progress.ocEncontradas = codigosDetalle.length;
+    progress.totalObjetivo = cached.length || maxOrdenes;
+    progress.ocEncontradas = cached.length;
+    progress.ocProcesadas = cached.length;
+    progress.ocOmitidas = 0;
+    progress.porcentaje = 100;
   }
 
-  for (const codigo of codigosDetalle) {
-    const detalle = await obtenerDetalleOrdenSeguro(codigo);
-    detalles.push(detalle);
-    if (progress) {
-      if (detalle.errorDetalle) {
-        progress.ocOmitidas += 1;
-      } else {
-        progress.ocProcesadas += 1;
-      }
-      progress.porcentaje = Math.min(100, Math.round(((progress.ocProcesadas + progress.ocOmitidas) / Math.max(1, progress.totalObjetivo)) * 100));
-    }
-  }
-
-  const ordenes = detalles
-    .map(resumenOrdenAnalitica)
-    .filter((orden) => {
-      if (modoAnalisis === "clientes") return true;
-      return !clientesSeleccionados || clientesSeleccionados.has(String(orden.comprador.codigoOrganismo));
-    });
+  const ordenes = cached.map((item) => resumenOrdenAnalitica(item.raw));
 
   const productos = new Map();
   const clientes = new Map();
@@ -966,11 +1467,11 @@ async function obtenerReportesOrdenesSeleccionadas(query = {}, progress) {
     });
   });
 
-  return {
+  const result = {
     modo: "seleccion_observados",
     filtros: {
       modoAnalisis,
-      rango: "ultimo_ano",
+      fuente: "oc_cache",
       limiteOrdenes: maxOrdenes,
       proveedoresObservados: proveedoresSeleccionados,
       clientesObservados: clientesSeleccionados ? Array.from(clientesSeleccionados) : [],
@@ -990,6 +1491,16 @@ async function obtenerReportesOrdenesSeleccionadas(query = {}, progress) {
     clientesGuardados,
     fuente: "Direccion ChileCompra - API Mercado Publico",
   };
+
+  await MercadoPublicoAnalisis.create({
+    modoAnalisis,
+    filtros: result.filtros,
+    resumen: result.resumen,
+    resultado: result,
+    solicitadoPor: query.solicitadoPor || null,
+  });
+
+  return result;
 }
 
 function publicJob(job) {
@@ -1313,6 +1824,15 @@ module.exports = {
   listarClientesGuardados,
   iniciarReporteJob,
   obtenerReporteJob,
+  listarDescargaOrdenesJobs,
+  cancelarJob,
+  sincronizarEntidadesGuardadas,
+  listarOrdenesCacheResumen,
+  listarAnalisisGuardados,
   obtenerEstadoConfiguracion,
   guardarTicket,
 };
+
+setTimeout(() => {
+  reanudarJobsPendientes().catch(() => {});
+}, 1000);

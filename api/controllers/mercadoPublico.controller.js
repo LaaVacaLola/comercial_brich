@@ -73,6 +73,59 @@ exports.getReporteJob = async (req, res) => {
   }
 };
 
+exports.getDescargaOrdenesJobs = async (req, res) => {
+  try {
+    const data = await mercadoPublico.listarDescargaOrdenesJobs();
+    res.json(data);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+exports.cancelJob = async (req, res) => {
+  try {
+    const data = await mercadoPublico.cancelarJob(req.params.id);
+    res.json({
+      ok: true,
+      message: "Job cancelado.",
+      job: data,
+    });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+exports.syncEntidadesGuardadas = async (req, res) => {
+  try {
+    const data = await mercadoPublico.sincronizarEntidadesGuardadas();
+    res.status(202).json({
+      ok: true,
+      message: "Jobs de descarga iniciados para entidades guardadas.",
+      ...data,
+    });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+exports.getOrdenesCache = async (req, res) => {
+  try {
+    const data = await mercadoPublico.listarOrdenesCacheResumen();
+    res.json(data);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+exports.getAnalisisGuardados = async (req, res) => {
+  try {
+    const data = await mercadoPublico.listarAnalisisGuardados();
+    res.json(data);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
 exports.getProveedor = async (req, res) => {
   try {
     const data = await mercadoPublico.buscarProveedor(req.query.rut);

@@ -128,6 +128,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function formatDate(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString("es-CL", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  async function cargarAnalisisGuardados() {
+    const tbody = document.getElementById("analisisGuardadosTable");
+    if (!tbody) return;
+
+    try {
+      const data = await MP.request("/reportes/guardados", { silent: true });
+      const analisis = MP.getListado(data);
+      tbody.innerHTML = "";
+
+      if (!analisis.length) {
+        MP.renderEmpty(tbody, 5, "No hay analisis guardados.");
+        return;
+      }
+
+      analisis.forEach((item) => {
+        const row = document.createElement("tr");
+        MP.appendCell(row, formatDate(item.createdAt));
+        MP.appendCell(row, item.modoAnalisis || "-");
+        MP.appendCell(row, String(item.resumen?.totalOrdenes || 0));
+        MP.appendCell(row, MP.formatMoney(item.resumen?.montoTotal || 0));
+        MP.appendCell(row, JSON.stringify(item.filtros || {}));
+        tbody.appendChild(row);
+      });
+    } catch (err) {
+      MP.renderEmpty(tbody, 5, "No fue posible cargar analisis guardados.");
+    }
+  }
+
   function renderProgress(progress = {}, status = "running") {
     const porcentaje = Number(progress.porcentaje || 0);
     document.getElementById("progressPercent").textContent = `${porcentaje}%`;
@@ -210,6 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       renderReport(data, modo === "clientes" ? clientes : proveedores, modo);
+      cargarAnalisisGuardados();
       MP.setMessage(`Analitica generada con ${data.resumen?.totalOrdenes || 0} OC.`);
     } catch (err) {
       MP.setMessage(err.message, true);
@@ -218,5 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("analizarProveedoresBtn").addEventListener("click", () => generarReportes("proveedores"));
   document.getElementById("analizarClientesBtn").addEventListener("click", () => generarReportes("clientes"));
+  document.getElementById("refreshAnalisisBtn").addEventListener("click", cargarAnalisisGuardados);
   cargarSelectores();
+  cargarAnalisisGuardados();
 });
