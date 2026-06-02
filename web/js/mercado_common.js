@@ -78,20 +78,23 @@ window.MercadoPublico = (() => {
       const message = data.error || data.message || `Error HTTP ${res.status}`;
 
       if (res.status === 401 || ["AUTH_REQUIRED", "TOKEN_INVALID"].includes(data.code)) {
-        setMessage(`${message}. Redirigiendo al login...`, true);
+        if (!options.silent) setMessage(`${message}. Redirigiendo al login...`, true);
         redirectToLogin();
         return null;
       }
 
-      setMessage(message, true);
+      if (!options.silent) setMessage(message, true);
 
+      const error = new Error(message);
+      error.status = res.status;
+      error.data = data;
       if (res.status === 403) {
-        throw new Error(message || "Acceso rechazado. Revisa tu sesion admin o el ticket de ChileCompra.");
+        throw error;
       }
-      throw new Error(message);
+      throw error;
     }
 
-    setMessage(data.message || backendMessage(options.method || "GET", path));
+    if (!options.silent) setMessage(data.message || backendMessage(options.method || "GET", path));
     return data;
   }
 

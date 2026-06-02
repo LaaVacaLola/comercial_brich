@@ -21,13 +21,22 @@
   </header>
 
   <main class="container">
-    <h1>Analitica Mercado Publico</h1>
-    <p class="subtitle">Resumen de ordenes consultadas desde ChileCompra.</p>
+    <section class="analytics-hero">
+      <div>
+        <span class="eyebrow">ChileCompra / Mercado Publico</span>
+        <h1>Analitica de ordenes de compra</h1>
+        <p class="subtitle">Resumen operativo de montos, organismos compradores, proveedores y estados de ordenes consultadas.</p>
+      </div>
+      <div class="hero-badge">
+        <span>Fuente</span>
+        <strong>API Mercado Publico</strong>
+      </div>
+    </section>
 
     <section class="filters">
-      <input type="date" id="fecha">
+      <input type="date" id="fechaDesde" aria-label="Fecha desde">
+      <input type="date" id="fechaHasta" aria-label="Fecha hasta">
       <select id="estado">
-        <option value="">Todos los estados</option>
         <option value="todos">Todos</option>
         <option value="enviadaproveedor">Enviada proveedor</option>
         <option value="aceptada">Aceptada</option>
@@ -46,32 +55,39 @@
       <article class="kpi-card">
         <span>Total ordenes</span>
         <strong id="totalOrdenes">0</strong>
+        <small>Ordenes encontradas en el rango seleccionado.</small>
       </article>
       <article class="kpi-card">
         <span>Monto total</span>
         <strong id="montoTotal">$0</strong>
+        <small>Suma de montos informados por ChileCompra.</small>
       </article>
       <article class="kpi-card">
         <span>Promedio orden</span>
         <strong id="promedioOrden">$0</strong>
+        <small>Monto promedio por orden encontrada.</small>
       </article>
     </section>
 
     <section class="charts-grid">
       <div class="chart-card">
-        <h2>Top proveedores</h2>
+        <h2>Proveedores informados</h2>
+        <p>Solo se muestra si el listado de ChileCompra entrega proveedor sin consultar detalle.</p>
         <canvas id="proveedoresChart"></canvas>
       </div>
       <div class="chart-card">
-        <h2>Top compradores</h2>
+        <h2>Organismos informados</h2>
+        <p>Solo se muestra si el listado entrega organismo comprador directamente.</p>
         <canvas id="compradoresChart"></canvas>
       </div>
       <div class="chart-card">
         <h2>Ordenes por estado</h2>
+        <p>Distribucion confiable calculada desde el codigo de estado del listado.</p>
         <canvas id="estadosChart"></canvas>
       </div>
       <div class="chart-card">
-        <h2>Montos por fecha</h2>
+        <h2>Ordenes por fecha</h2>
+        <p>Cantidad de ordenes por fecha en el rango consultado.</p>
         <canvas id="fechasChart"></canvas>
       </div>
     </section>

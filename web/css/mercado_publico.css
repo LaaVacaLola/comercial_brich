@@ -75,6 +75,61 @@ body {
   text-align: center;
 }
 
+.analytics-hero {
+  align-items: center;
+  background: linear-gradient(135deg, #0a2f6b, #1f4e79);
+  border-radius: 8px;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 1.5rem;
+  padding: 1.6rem;
+}
+
+.analytics-hero h1 {
+  color: #fff;
+  margin: 0.25rem 0;
+  text-align: left;
+}
+
+.analytics-hero .subtitle {
+  color: rgba(255, 255, 255, 0.84);
+  margin: 0;
+  max-width: 760px;
+  text-align: left;
+}
+
+.eyebrow {
+  color: #cfe5ff;
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.hero-badge {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  min-width: 180px;
+  padding: 1rem;
+}
+
+.hero-badge span {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  opacity: 0.8;
+  text-transform: uppercase;
+}
+
+.hero-badge strong {
+  display: block;
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
 .filters,
 .helper-panel {
   background: #fff;
@@ -449,6 +504,13 @@ button:disabled {
   margin-top: 8px;
 }
 
+.kpi-card small {
+  color: #64748b;
+  display: block;
+  line-height: 1.35;
+  margin-top: 8px;
+}
+
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -457,6 +519,18 @@ button:disabled {
 
 .chart-card {
   min-height: 320px;
+}
+
+.chart-card h2 {
+  color: #0a2f6b;
+  margin: 0 0 0.25rem;
+}
+
+.chart-card p {
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  margin: 0 0 1rem;
 }
 
 .chart-card canvas {
@@ -552,6 +626,11 @@ button:disabled {
   .helper-panel input,
   .helper-panel button {
     width: 100%;
+  }
+
+  .analytics-hero {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .tender-header,

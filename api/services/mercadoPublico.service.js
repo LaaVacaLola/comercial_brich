@@ -312,6 +312,9 @@ async function obtenerLicitacion(codigo) {
 }
 
 async function listarOrdenes(query = {}) {
+  const byRange = await requestOrdenesPorFechas(query);
+  if (byRange) return byRange;
+
   return requestChileCompra(`${PUBLIC_URL}/ordenesdecompra.json`, await buildParams(query, ORDEN_ESTADOS));
 }
 
@@ -330,6 +333,53 @@ async function buscarCompradores() {
   return requestChileCompra(`${EMPRESAS_URL}/BuscarComprador`, {
     ticket: await getTicket(),
   });
+}
+
+async function requestOrdenesPorFechas(query) {
+  const fechas = datesBetween(query.fechaDesde, query.fechaHasta);
+  if (!fechas) return null;
+
+  const ticket = await getTicket();
+  const estado = cleanEstado(query.estado, ORDEN_ESTADOS, "estado");
+  const codigoOrganismo = cleanCode(query.CodigoOrganismo || query.codigoOrganismo, "CodigoOrganismo");
+  const codigoProveedor = cleanCode(query.CodigoProveedor || query.codigoProveedor, "CodigoProveedor");
+
+  const results = await Promise.allSettled(
+    fechas.map((fecha) => {
+      const params = { fecha, ticket };
+      if (estado) params.estado = estado;
+      if (codigoOrganismo) params.CodigoOrganismo = codigoOrganismo;
+      if (codigoProveedor) params.CodigoProveedor = codigoProveedor;
+      return requestChileCompra(`${PUBLIC_URL}/ordenesdecompra.json`, params);
+    })
+  );
+
+  const fulfilled = results
+    .filter((result) => result.status === "fulfilled")
+    .map((result) => result.value);
+
+  if (!fulfilled.length) {
+    const firstError = results.find((result) => result.status === "rejected")?.reason;
+    throw firstError || new Error("No fue posible obtener ordenes para el rango de fechas");
+  }
+
+  const byCode = new Map();
+  fulfilled.flatMap(getListado).forEach((item) => {
+    const code = item.Codigo || item.CodigoOC || JSON.stringify(item);
+    byCode.set(code, item);
+  });
+
+  return {
+    Cantidad: byCode.size,
+    Listado: Array.from(byCode.values()),
+    filtrosAplicados: {
+      rango: "fecha_desde_hasta",
+      fechas,
+      estado: estado || null,
+      codigoOrganismo: codigoOrganismo || null,
+      codigoProveedor: codigoProveedor || null,
+    },
+  };
 }
 
 async function obtenerEstadoConfiguracion() {
@@ -416,6 +466,33 @@ function addToMap(map, key, amount) {
   map.set(key, current);
 }
 
+function estadoOrdenTexto(item) {
+  const estado = firstText(item, ["Estado", "EstadoOrdenCompra", "estado"]);
+  if (estado !== "Sin informacion") return estado;
+
+  const codigoEstado = Number(item?.CodigoEstado || 0);
+  const estados = {
+    4: "Enviada a proveedor",
+    5: "En proceso",
+    6: "Aceptada",
+    9: "Cancelada",
+    12: "Recepcion conforme",
+    13: "Pendiente recepcion",
+    14: "Recepcionada parcialmente",
+    15: "Recepcion conforme incompleta",
+  };
+
+  return estados[codigoEstado] || `Estado ${codigoEstado || "Sin informacion"}`;
+}
+
+function fechaOrdenTexto(item) {
+  const raw = firstText(item, ["FechaEnvio", "FechaCreacion", "Fecha", "fecha"]);
+  if (raw === "Sin informacion") return raw;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  return `${String(date.getDate()).padStart(2, "0")}-${String(date.getMonth() + 1).padStart(2, "0")}-${date.getFullYear()}`;
+}
+
 function topFromMap(map, limit = 8) {
   return Array.from(map.values())
     .sort((a, b) => b.monto - a.monto || b.cantidad - a.cantidad)
@@ -436,10 +513,10 @@ async function obtenerReportes(query = {}) {
     const amount = pickNumber(orden.Total || orden.MontoTotal || orden.total || orden.montoTotal);
     montoTotal += amount;
 
-    addToMap(proveedores, firstText(orden, ["NombreProveedor", "Proveedor", "nombreProveedor"]), amount);
-    addToMap(compradores, firstText(orden, ["NombreOrganismo", "Organismo", "NombreComprador", "UnidadCompra"]), amount);
-    addToMap(estados, firstText(orden, ["Estado", "EstadoOrdenCompra", "estado"]), amount);
-    addToMap(fechas, firstText(orden, ["FechaEnvio", "FechaCreacion", "Fecha", "fecha"]), amount);
+    addToMap(proveedores, firstText(orden, ["NombreProveedor", "Proveedor.Nombre", "Proveedor.NombreProveedor", "Proveedor", "nombreProveedor"]), amount);
+    addToMap(compradores, firstText(orden, ["Comprador.NombreOrganismo", "NombreOrganismo", "Organismo", "NombreComprador", "UnidadCompra"]), amount);
+    addToMap(estados, estadoOrdenTexto(orden), amount || 1);
+    addToMap(fechas, fechaOrdenTexto(orden), amount || 1);
   });
 
   return {

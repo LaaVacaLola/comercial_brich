@@ -24,9 +24,9 @@
     <p class="subtitle">Consulta ordenes oficiales de ChileCompra separadas de las ordenes internas.</p>
 
     <section class="filters">
-      <input type="date" id="fecha">
+      <input type="date" id="fechaDesde" aria-label="Fecha desde">
+      <input type="date" id="fechaHasta" aria-label="Fecha hasta">
       <select id="estado">
-        <option value="">Todos los estados</option>
         <option value="todos">Todos</option>
         <option value="enviadaproveedor">Enviada proveedor</option>
         <option value="aceptada">Aceptada</option>
@@ -56,16 +56,20 @@
         <thead>
           <tr>
             <th>Codigo</th>
-            <th>Proveedor</th>
-            <th>Organismo</th>
-            <th>Fecha</th>
-            <th>Total</th>
+            <th>Nombre</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="resultTable"></tbody>
       </table>
+    </section>
+
+    <section class="pagination-bar" aria-label="Paginacion ordenes">
+      <button id="prevPageBtn" class="btn-secondary" type="button">Anterior</button>
+      <div id="pageButtons" class="page-buttons"></div>
+      <button id="nextPageBtn" class="btn-secondary" type="button">Siguiente</button>
+      <span id="pageInfo" class="page-info">Pagina 0 de 0</span>
     </section>
   </main>
 
