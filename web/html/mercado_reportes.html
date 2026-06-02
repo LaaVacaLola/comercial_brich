@@ -25,71 +25,123 @@
       <div>
         <span class="eyebrow">ChileCompra / Mercado Publico</span>
         <h1>Analitica de ordenes de compra</h1>
-        <p class="subtitle">Resumen operativo de montos, organismos compradores, proveedores y estados de ordenes consultadas.</p>
+        <p class="subtitle">Selecciona proveedores y clientes observados para analizar sus OC del ultimo ano: productos comprados, montos, compradores y estados.</p>
       </div>
       <div class="hero-badge">
-        <span>Fuente</span>
-        <strong>API Mercado Publico</strong>
+        <span>Periodo</span>
+        <strong>Ultimos 365 dias</strong>
       </div>
     </section>
 
-    <section class="filters">
-      <input type="date" id="fechaDesde" aria-label="Fecha desde">
-      <input type="date" id="fechaHasta" aria-label="Fecha hasta">
-      <select id="estado">
-        <option value="todos">Todos</option>
-        <option value="enviadaproveedor">Enviada proveedor</option>
-        <option value="aceptada">Aceptada</option>
-        <option value="cancelada">Cancelada</option>
-        <option value="recepcionconforme">Recepcion conforme</option>
-        <option value="pendienterecepcion">Pendiente recepcion</option>
-      </select>
-      <input type="text" id="codigoOrganismo" placeholder="Codigo organismo">
-      <input type="text" id="codigoProveedor" placeholder="Codigo proveedor">
-      <button id="generarBtn" class="btn-primary">Generar</button>
+    <section class="analytics-selectors">
+      <div class="selector-card">
+        <label for="proveedorSelector">Proveedores observados</label>
+        <div class="selector-row">
+          <select id="proveedorSelector" multiple></select>
+          <button id="analizarProveedoresBtn" class="btn-primary" type="button">Analizar proveedores</button>
+        </div>
+        <small>Obligatorio. Se consultan OC por codigo proveedor.</small>
+      </div>
+      <div class="selector-card">
+        <label for="clienteSelector">Clientes observados</label>
+        <div class="selector-row">
+          <select id="clienteSelector" multiple></select>
+          <button id="analizarClientesBtn" class="btn-secondary" type="button">Analizar clientes</button>
+        </div>
+        <small>Obligatorio para analisis de clientes. Consulta OC por organismo comprador.</small>
+      </div>
+      <div class="selector-card compact">
+        <label for="limiteOrdenes">Cantidad maxima de OC</label>
+        <select id="limiteOrdenes">
+          <option value="50">50</option>
+          <option value="100" selected>100</option>
+          <option value="250">250</option>
+          <option value="500">500</option>
+          <option value="1000">1000</option>
+        </select>
+        <small>Aplica a proveedores y clientes.</small>
+      </div>
     </section>
 
-    <p id="statusMessage" class="status-message">Selecciona filtros y presiona Generar.</p>
+    <p id="statusMessage" class="status-message">Selecciona proveedores o clientes y genera el analisis correspondiente.</p>
+
+    <section class="progress-panel" aria-label="Progreso carga analitica">
+      <div class="progress-heading">
+        <strong id="progressPercent">0%</strong>
+        <span id="progressText">Sin proceso activo.</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+      <div class="progress-stats">
+        <span>OC encontradas: <strong id="ocEncontradas">0</strong></span>
+        <span>OC procesadas: <strong id="ocProcesadas">0</strong></span>
+        <span>OC omitidas: <strong id="ocOmitidas">0</strong></span>
+        <span>Consultas omitidas: <strong id="consultasOmitidas">0</strong></span>
+      </div>
+    </section>
 
     <section class="kpi-grid">
       <article class="kpi-card">
-        <span>Total ordenes</span>
+        <span>Total OC</span>
         <strong id="totalOrdenes">0</strong>
-        <small>Ordenes encontradas en el rango seleccionado.</small>
+        <small>Ordenes de compra recuperadas y detalladas desde ChileCompra.</small>
       </article>
       <article class="kpi-card">
         <span>Monto total</span>
         <strong id="montoTotal">$0</strong>
-        <small>Suma de montos informados por ChileCompra.</small>
+        <small>Total acumulado de las OC encontradas.</small>
       </article>
       <article class="kpi-card">
-        <span>Promedio orden</span>
+        <span>Promedio OC</span>
         <strong id="promedioOrden">$0</strong>
-        <small>Monto promedio por orden encontrada.</small>
+        <small>Monto promedio por orden de compra.</small>
+      </article>
+      <article class="kpi-card">
+        <span>Seleccionados</span>
+        <strong id="seleccionadosCount">0</strong>
+        <small id="seleccionadosLabel">Entidades usadas para consultar OC.</small>
       </article>
     </section>
 
     <section class="charts-grid">
       <div class="chart-card">
-        <h2>Proveedores informados</h2>
-        <p>Solo se muestra si el listado de ChileCompra entrega proveedor sin consultar detalle.</p>
-        <canvas id="proveedoresChart"></canvas>
+        <h2>Que compraron</h2>
+        <p>Productos con mayor monto o cantidad dentro de las OC detalladas.</p>
+        <canvas id="productosCompradosChart"></canvas>
       </div>
       <div class="chart-card">
-        <h2>Organismos informados</h2>
-        <p>Solo se muestra si el listado entrega organismo comprador directamente.</p>
-        <canvas id="compradoresChart"></canvas>
+        <h2>Quien compro</h2>
+        <p>Organismos compradores con mayor monto acumulado.</p>
+        <canvas id="clientesCompradoresChart"></canvas>
       </div>
       <div class="chart-card">
-        <h2>Ordenes por estado</h2>
-        <p>Distribucion confiable calculada desde el codigo de estado del listado.</p>
-        <canvas id="estadosChart"></canvas>
-      </div>
-      <div class="chart-card">
-        <h2>Ordenes por fecha</h2>
-        <p>Cantidad de ordenes por fecha en el rango consultado.</p>
+        <h2>Montos por fecha</h2>
+        <p>Evolucion del monto de OC por fecha.</p>
         <canvas id="fechasChart"></canvas>
       </div>
+      <div class="chart-card">
+        <h2>OC por estado</h2>
+        <p>Distribucion administrativa de las ordenes encontradas.</p>
+        <canvas id="estadosChart"></canvas>
+      </div>
+    </section>
+
+    <section class="table-wrapper analytics-table">
+      <h2>Ordenes de compra analizadas</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Codigo</th>
+            <th>Proveedor</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="ordenesAnalizadasTable"></tbody>
+      </table>
     </section>
   </main>
 </body>

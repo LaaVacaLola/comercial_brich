@@ -1,42 +1,21 @@
 document.addEventListener("DOMContentLoaded", () => {
   const MP = window.MercadoPublico;
-  const filterIds = ["fechaDesde", "fechaHasta", "estado", "codigoOrganismo", "codigoProveedor"];
   const charts = {};
 
   if (!MP.getTokenOrRedirect()) return;
 
-  function isoDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+  function selectedValues(id) {
+    return Array.from(document.getElementById(id)?.selectedOptions || [])
+      .map((option) => option.value)
+      .filter(Boolean);
   }
 
-  function setDefaultFilters() {
-    const today = new Date();
-    const weekAgo = new Date();
-    weekAgo.setDate(today.getDate() - 7);
-
-    const fechaDesde = document.getElementById("fechaDesde") || document.getElementById("fecha");
-    const fechaHasta = document.getElementById("fechaHasta");
-    const estado = document.getElementById("estado");
-
-    if (fechaDesde) fechaDesde.value = isoDate(weekAgo);
-    if (fechaHasta) fechaHasta.value = isoDate(today);
-    if (estado) estado.value = "todos";
+  function selectedLimit() {
+    return document.getElementById("limiteOrdenes")?.value || "100";
   }
 
-  function ensureReportInputs() {
-    const oldFecha = document.getElementById("fecha");
-    if (oldFecha && !document.getElementById("fechaDesde")) {
-      oldFecha.id = "fechaDesde";
-      oldFecha.setAttribute("aria-label", "Fecha desde");
-      const hasta = document.createElement("input");
-      hasta.type = "date";
-      hasta.id = "fechaHasta";
-      hasta.setAttribute("aria-label", "Fecha hasta");
-      oldFecha.insertAdjacentElement("afterend", hasta);
-    }
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   function chart(id, type, labels, values, label) {
@@ -77,37 +56,167 @@ document.addEventListener("DOMContentLoaded", () => {
     return (items || []).map((item) => Number(item.monto || item.cantidad || 0));
   }
 
-  function counts(items) {
-    return (items || []).map((item) => Number(item.cantidad || 0));
+  function fillSelect(id, items, valueKey, labelKey, emptyText) {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.innerHTML = "";
+
+    if (!items.length) {
+      const option = document.createElement("option");
+      option.disabled = true;
+      option.textContent = emptyText;
+      select.appendChild(option);
+      return;
+    }
+
+    items.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = item[valueKey] || "";
+      option.textContent = `${item[labelKey] || "Sin nombre"} (${item[valueKey] || "sin codigo"})`;
+      select.appendChild(option);
+    });
   }
 
-  async function generarReportes() {
+  async function cargarSelectores() {
     try {
-      MP.setMessage("Generando analitica desde ChileCompra...");
-      const query = MP.buildQuery(filterIds);
-      const data = await MP.request(`/reportes${query ? `?${query}` : ""}`);
-      if (!data) return;
+      MP.setMessage("Cargando proveedores y clientes observados...");
+      const [proveedoresData, clientesData] = await Promise.all([
+        MP.request("/proveedores-guardados", { silent: true }),
+        MP.request("/clientes-observados", { silent: true }),
+      ]);
 
-      document.getElementById("totalOrdenes").textContent = data.resumen?.totalOrdenes || 0;
-      document.getElementById("montoTotal").textContent = MP.formatMoney(data.resumen?.montoTotal || 0);
-      document.getElementById("promedioOrden").textContent = MP.formatMoney(data.resumen?.promedioOrden || 0);
+      fillSelect(
+        "proveedorSelector",
+        MP.getListado(proveedoresData),
+        "codigoProveedor",
+        "nombreProveedor",
+        "No hay proveedores guardados"
+      );
+      fillSelect(
+        "clienteSelector",
+        MP.getListado(clientesData),
+        "codigoOrganismo",
+        "nombreOrganismo",
+        "No hay clientes guardados"
+      );
 
-      const proveedores = (data.topProveedores || []).filter((item) => item.nombre !== "Sin informacion");
-      const compradores = (data.topCompradores || []).filter((item) => item.nombre !== "Sin informacion");
+      MP.setMessage("Selectores cargados. Selecciona proveedores y presiona Generar.");
+    } catch (err) {
+      MP.setMessage(`No se pudieron cargar selectores: ${err.message}`, true);
+    }
+  }
 
-      chart("proveedoresChart", "bar", names(proveedores), counts(proveedores), "Cantidad");
-      chart("compradoresChart", "bar", names(compradores), counts(compradores), "Cantidad");
-      chart("estadosChart", "doughnut", names(data.porEstado), counts(data.porEstado), "Cantidad");
-      chart("fechasChart", "line", names(data.porFecha), counts(data.porFecha), "Cantidad");
+  function renderOrdenes(ordenes) {
+    const tbody = document.getElementById("ordenesAnalizadasTable");
+    if (!tbody) return;
+    tbody.innerHTML = "";
 
-      MP.setMessage(`Analitica generada con ${data.resumen?.totalOrdenes || 0} ordenes.`);
+    if (!ordenes.length) {
+      MP.renderEmpty(tbody, 6, "No hay ordenes de compra para los proveedores/clientes seleccionados.");
+      return;
+    }
+
+    ordenes.forEach((orden) => {
+      const row = document.createElement("tr");
+      MP.appendCell(row, orden.codigo || "-");
+      MP.appendCell(row, orden.proveedor?.nombre || "-");
+      MP.appendCell(row, orden.comprador?.nombreOrganismo || "-");
+      MP.appendCell(row, orden.fecha || "-");
+      MP.appendCell(row, MP.formatMoney(orden.total || 0));
+      MP.appendStatus(row, orden.estado || "-");
+      tbody.appendChild(row);
+    });
+  }
+
+  function renderProgress(progress = {}, status = "running") {
+    const porcentaje = Number(progress.porcentaje || 0);
+    document.getElementById("progressPercent").textContent = `${porcentaje}%`;
+    document.getElementById("progressBar").style.width = `${Math.min(100, porcentaje)}%`;
+    document.getElementById("ocEncontradas").textContent = progress.ocEncontradas || 0;
+    document.getElementById("ocProcesadas").textContent = progress.ocProcesadas || 0;
+    document.getElementById("ocOmitidas").textContent = progress.ocOmitidas || 0;
+    document.getElementById("consultasOmitidas").textContent = progress.consultasOmitidas || 0;
+
+    const total = progress.totalObjetivo || 0;
+    const procesadas = Number(progress.ocProcesadas || 0) + Number(progress.ocOmitidas || 0);
+    document.getElementById("progressText").textContent = status === "complete"
+      ? "Analitica completa."
+      : `Procesando ${procesadas} de ${total} OC objetivo. Consultas API: ${progress.consultasProcesadas || 0}.`;
+  }
+
+  function renderReport(data, seleccionados, modo) {
+    document.getElementById("totalOrdenes").textContent = data.resumen?.totalOrdenes || 0;
+    document.getElementById("montoTotal").textContent = MP.formatMoney(data.resumen?.montoTotal || 0);
+    document.getElementById("promedioOrden").textContent = MP.formatMoney(data.resumen?.promedioOrden || 0);
+    document.getElementById("seleccionadosCount").textContent = seleccionados.length;
+    document.getElementById("seleccionadosLabel").textContent = modo === "clientes"
+      ? "Clientes usados para consultar OC por organismo comprador."
+      : "Proveedores usados para consultar OC por proveedor.";
+
+    chart("productosCompradosChart", "bar", names(data.topProductosComprados), amounts(data.topProductosComprados), "Monto");
+    chart("clientesCompradoresChart", "bar", names(data.topClientesCompradores), amounts(data.topClientesCompradores), "Monto");
+    chart("fechasChart", "line", names(data.porFecha), amounts(data.porFecha), "Monto");
+    chart("estadosChart", "doughnut", names(data.porEstado), amounts(data.porEstado), "Monto");
+    renderOrdenes(data.ordenes || []);
+  }
+
+  async function generarReportes(modo) {
+    const proveedores = selectedValues("proveedorSelector");
+    const clientes = selectedValues("clienteSelector");
+
+    if (modo === "proveedores" && !proveedores.length) {
+      MP.setMessage("Selecciona al menos un proveedor observado.", true);
+      renderReport({ resumen: {}, ordenes: [] }, proveedores, modo);
+      return;
+    }
+
+    if (modo === "clientes" && !clientes.length) {
+      MP.setMessage("Selecciona al menos un cliente observado.", true);
+      renderReport({ resumen: {}, ordenes: [] }, clientes, modo);
+      return;
+    }
+
+    try {
+      MP.setMessage(modo === "clientes"
+        ? `Consultando hasta ${selectedLimit()} OC por clientes con cola lenta anti-429...`
+        : `Consultando hasta ${selectedLimit()} OC por proveedores con cola lenta anti-429...`);
+      const params = new URLSearchParams();
+      params.set("modoAnalisis", modo);
+      params.set("limiteOrdenes", selectedLimit());
+      if (modo === "clientes") {
+        params.set("clientesObservados", clientes.join(","));
+      } else {
+        params.set("proveedoresObservados", proveedores.join(","));
+        if (clientes.length) params.set("clientesObservados", clientes.join(","));
+      }
+
+      const job = await MP.request("/reportes/jobs", {
+        method: "POST",
+        body: Object.fromEntries(params.entries()),
+      });
+      if (!job?.id) return;
+
+      let data = null;
+      while (!data) {
+        await sleep(1000);
+        const status = await MP.request(`/reportes/jobs/${encodeURIComponent(job.id)}`, { silent: true });
+        renderProgress(status.progress, status.status);
+
+        if (status.status === "complete") {
+          data = status.result;
+        } else if (status.status === "error") {
+          throw new Error(status.error || "No fue posible generar analitica");
+        }
+      }
+
+      renderReport(data, modo === "clientes" ? clientes : proveedores, modo);
+      MP.setMessage(`Analitica generada con ${data.resumen?.totalOrdenes || 0} OC.`);
     } catch (err) {
       MP.setMessage(err.message, true);
     }
   }
 
-  ensureReportInputs();
-  setDefaultFilters();
-  document.getElementById("generarBtn").addEventListener("click", generarReportes);
-  generarReportes();
+  document.getElementById("analizarProveedoresBtn").addEventListener("click", () => generarReportes("proveedores"));
+  document.getElementById("analizarClientesBtn").addEventListener("click", () => generarReportes("clientes"));
+  cargarSelectores();
 });

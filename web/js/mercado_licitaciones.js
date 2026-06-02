@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const pageInfo = document.getElementById("pageInfo");
   const prevPageBtn = document.getElementById("prevPageBtn");
   const nextPageBtn = document.getElementById("nextPageBtn");
-  const filterIds = ["fechaDesde", "fechaHasta", "estado", "codigo", "codigoOrganismo", "codigoProveedor"];
+  const filterIds = ["fechaDesde", "fechaHasta", "estado", "codigo", "texto", "codigoOrganismo", "codigoProveedor"];
   const pageSize = 20;
   const cacheRadius = 5;
 
@@ -109,6 +109,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return match ? match[1].toUpperCase() : "-";
   }
 
+  function estaAdjudicada(item) {
+    const codigoEstado = Number(valueAt(item, ["CodigoEstado"], 0));
+    const estado = estadoLicitacion(item).toLowerCase();
+    return codigoEstado === 8 || estado.includes("adjudicad");
+  }
+
   function totalPages() {
     return Math.max(1, Math.ceil(licitaciones.length / pageSize));
   }
@@ -174,7 +180,33 @@ document.addEventListener("DOMContentLoaded", () => {
       MP.appendCell(row, tipoLicitacion(item));
       MP.appendCell(row, formatDate(valueAt(item, ["Fechas.FechaCierre", "FechaCierre", "Fechas.FechaFinal", "FechaFinal", "Fecha"])));
       MP.appendStatus(row, estadoLicitacion(item));
-      MP.appendAction(row, "Ver", () => showLicitacionDetail(codigo, item));
+
+      const actionCell = document.createElement("td");
+      const viewButton = document.createElement("button");
+      const saveButton = document.createElement("button");
+      const saveClientButton = document.createElement("button");
+
+      viewButton.className = "btn-secondary";
+      viewButton.type = "button";
+      viewButton.textContent = "Ver";
+      viewButton.addEventListener("click", () => showLicitacionDetail(codigo, item));
+
+      saveClientButton.className = "btn-primary";
+      saveClientButton.type = "button";
+      saveClientButton.textContent = "Guardar cliente";
+      saveClientButton.addEventListener("click", () => guardarClienteDesdeFila(codigo, item, saveClientButton));
+
+      actionCell.className = "table-actions";
+      actionCell.appendChild(viewButton);
+      if (estaAdjudicada(item)) {
+        saveButton.className = "btn-primary";
+        saveButton.type = "button";
+        saveButton.textContent = "Guardar proveedor";
+        saveButton.addEventListener("click", () => guardarProveedoresDesdeFila(codigo, item, saveButton));
+        actionCell.appendChild(saveButton);
+      }
+      actionCell.appendChild(saveClientButton);
+      row.appendChild(actionCell);
 
       tbody.appendChild(row);
     });
@@ -246,6 +278,275 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
+  function uniqueProviders(providers) {
+    const byCode = new Map();
+    providers.forEach((provider) => {
+      const codigo = textAt(provider, ["CodigoProveedor", "Codigo", "codigoProveedor", "codigo"], "");
+      const nombre = textAt(provider, ["NombreProveedor", "Nombre", "nombreProveedor", "nombre"], "");
+      if (!codigo || !nombre) return;
+      byCode.set(codigo, {
+        codigoProveedor: codigo,
+        nombreProveedor: nombre,
+        rutProveedor: textAt(provider, ["RutProveedor", "RutSucursal", "Rut", "rutProveedor", "rut"], ""),
+      });
+    });
+    return Array.from(byCode.values());
+  }
+
+  function proveedoresDesdeLicitacion(item) {
+    const providers = [];
+    const adjudicacion = valueAt(item, ["Adjudicacion"], null);
+    if (adjudicacion && typeof adjudicacion === "object") providers.push(adjudicacion);
+
+    const items = valueAt(item, ["Items.Listado"], []);
+    if (Array.isArray(items)) {
+      items.forEach((linea) => {
+        const itemAdjudicacion = linea?.Adjudicacion;
+        if (itemAdjudicacion && typeof itemAdjudicacion === "object") providers.push(itemAdjudicacion);
+      });
+    }
+
+    return uniqueProviders(providers);
+  }
+
+  function productosParaAnalitica(item) {
+    const items = valueAt(item, ["Items.Listado"], []);
+    if (!Array.isArray(items)) return [];
+
+    return items.map((linea) => ({
+      codigoProducto: textAt(linea, ["CodigoProducto"], ""),
+      nombreProducto: textAt(linea, ["NombreProducto", "Producto"], ""),
+      codigoCategoria: textAt(linea, ["CodigoCategoria"], ""),
+      categoria: textAt(linea, ["Categoria"], ""),
+      cantidad: valueAt(linea, ["Cantidad"], 0),
+      unidadMedida: textAt(linea, ["UnidadMedida", "Unidad"], ""),
+    }));
+  }
+
+  function buildProveedorPayload(item, proveedor) {
+    return {
+      proveedor,
+      licitacion: {
+        codigo: textAt(item, ["CodigoExterno", "Codigo"]),
+        nombre: textAt(item, ["Nombre", "NombreLicitacion"]),
+        estado: estadoLicitacion(item),
+        codigoEstado: valueAt(item, ["CodigoEstado"], null),
+        tipo: tipoLicitacion(item),
+        moneda: textAt(item, ["Moneda"]),
+        montoEstimado: valueAt(item, ["MontoEstimado"], 0),
+        fechaPublicacion: valueAt(item, ["Fechas.FechaPublicacion", "FechaPublicacion"], null),
+        fechaCierre: valueAt(item, ["Fechas.FechaCierre", "FechaCierre"], null),
+        comprador: {
+          codigoOrganismo: textAt(item, ["Comprador.CodigoOrganismo"]),
+          nombreOrganismo: textAt(item, ["Comprador.NombreOrganismo", "NombreOrganismo"]),
+          codigoUnidad: textAt(item, ["Comprador.CodigoUnidad"]),
+          nombreUnidad: textAt(item, ["Comprador.NombreUnidad"]),
+          region: textAt(item, ["Comprador.RegionUnidad"]),
+          comuna: textAt(item, ["Comprador.ComunaUnidad"]),
+        },
+        productos: productosParaAnalitica(item),
+      },
+    };
+  }
+
+  function clienteDesdeLicitacion(item) {
+    return {
+      codigoOrganismo: textAt(item, ["Comprador.CodigoOrganismo"], ""),
+      nombreOrganismo: textAt(item, ["Comprador.NombreOrganismo", "NombreOrganismo"], ""),
+      rutUnidad: textAt(item, ["Comprador.RutUnidad"], ""),
+      codigoUnidad: textAt(item, ["Comprador.CodigoUnidad"], ""),
+      nombreUnidad: textAt(item, ["Comprador.NombreUnidad"], ""),
+      region: textAt(item, ["Comprador.RegionUnidad"], ""),
+      comuna: textAt(item, ["Comprador.ComunaUnidad"], ""),
+    };
+  }
+
+  function buildClientePayload(item) {
+    return {
+      cliente: clienteDesdeLicitacion(item),
+      licitacion: {
+        codigo: textAt(item, ["CodigoExterno", "Codigo"]),
+        nombre: textAt(item, ["Nombre", "NombreLicitacion"]),
+        estado: estadoLicitacion(item),
+        codigoEstado: valueAt(item, ["CodigoEstado"], null),
+        tipo: tipoLicitacion(item),
+        moneda: textAt(item, ["Moneda"]),
+        montoEstimado: valueAt(item, ["MontoEstimado"], 0),
+        fechaPublicacion: valueAt(item, ["Fechas.FechaPublicacion", "FechaPublicacion"], null),
+        fechaCierre: valueAt(item, ["Fechas.FechaCierre", "FechaCierre"], null),
+        productos: productosParaAnalitica(item),
+      },
+    };
+  }
+
+  async function guardarProveedorAnalitica(item, proveedor, button) {
+    try {
+      button.disabled = true;
+      button.textContent = "Guardando...";
+      const data = await MP.request("/proveedores-guardados", {
+        method: "POST",
+        body: buildProveedorPayload(item, proveedor),
+      });
+      button.textContent = "Guardado";
+      MP.setMessage(data?.message || `Proveedor ${proveedor.nombreProveedor} guardado para analitica.`);
+    } catch (err) {
+      button.disabled = false;
+      button.textContent = "Guardar";
+      MP.setMessage(`No se pudo guardar proveedor: ${err.message}`, true);
+    }
+  }
+
+  async function guardarProveedoresDesdeFila(codigo, fallbackItem, button) {
+    try {
+      button.disabled = true;
+      button.textContent = "Buscando...";
+      const detail = await MP.request(`/licitaciones/${encodeURIComponent(codigo)}`);
+      const item = MP.getListado(detail)[0] || detail || fallbackItem;
+      const proveedores = proveedoresDesdeLicitacion(item);
+
+      if (!proveedores.length) {
+        button.disabled = false;
+        button.textContent = "Guardar proveedor";
+        MP.setMessage("Esta licitacion no informa proveedor adjudicado en el detalle recibido desde ChileCompra.", true);
+        return;
+      }
+
+      button.textContent = "Guardando...";
+      await Promise.all(proveedores.map((proveedor) =>
+        MP.request("/proveedores-guardados", {
+          method: "POST",
+          body: buildProveedorPayload(item, proveedor),
+          silent: true,
+        })
+      ));
+
+      button.textContent = "Guardado";
+      MP.setMessage(`${proveedores.length} proveedor(es) guardado(s) para analitica desde ${codigo}.`);
+    } catch (err) {
+      button.disabled = false;
+      button.textContent = "Guardar proveedor";
+      MP.setMessage(`No se pudo guardar proveedor desde la fila: ${err.message}`, true);
+    }
+  }
+
+  async function guardarClienteAnalitica(item, button) {
+    try {
+      const cliente = clienteDesdeLicitacion(item);
+      if (!cliente.codigoOrganismo || !cliente.nombreOrganismo) {
+        MP.setMessage("Esta licitacion no informa organismo comprador suficiente para guardar cliente.", true);
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Guardando...";
+      const data = await MP.request("/clientes-observados", {
+        method: "POST",
+        body: buildClientePayload(item),
+      });
+      button.textContent = "Guardado";
+      MP.setMessage(data?.message || `Cliente ${cliente.nombreOrganismo} guardado para analitica.`);
+    } catch (err) {
+      button.disabled = false;
+      button.textContent = "Guardar cliente";
+      MP.setMessage(`No se pudo guardar cliente: ${err.message}`, true);
+    }
+  }
+
+  async function guardarClienteDesdeFila(codigo, fallbackItem, button) {
+    try {
+      button.disabled = true;
+      button.textContent = "Buscando...";
+      const detail = await MP.request(`/licitaciones/${encodeURIComponent(codigo)}`);
+      const item = MP.getListado(detail)[0] || detail || fallbackItem;
+      const cliente = clienteDesdeLicitacion(item);
+
+      if (!cliente.codigoOrganismo || !cliente.nombreOrganismo) {
+        button.disabled = false;
+        button.textContent = "Guardar cliente";
+        MP.setMessage("Esta licitacion no informa organismo comprador suficiente para guardar cliente.", true);
+        return;
+      }
+
+      button.textContent = "Guardando...";
+      await MP.request("/clientes-observados", {
+        method: "POST",
+        body: buildClientePayload(item),
+        silent: true,
+      });
+      button.textContent = "Guardado";
+      MP.setMessage(`Cliente ${cliente.nombreOrganismo} guardado para analitica desde ${codigo}.`);
+    } catch (err) {
+      button.disabled = false;
+      button.textContent = "Guardar cliente";
+      MP.setMessage(`No se pudo guardar cliente desde la fila: ${err.message}`, true);
+    }
+  }
+
+  function renderProveedorActions(item) {
+    if (!estaAdjudicada(item)) {
+      return `
+        <section class="tender-panel">
+          <h3>Proveedores para analitica</h3>
+          <p>La licitacion aun no esta adjudicada; no corresponde guardar proveedor.</p>
+        </section>
+      `;
+    }
+
+    const proveedores = proveedoresDesdeLicitacion(item);
+    if (!proveedores.length) {
+      return `
+        <section class="tender-panel">
+          <h3>Proveedores para analitica</h3>
+          <p>Esta licitacion no informa proveedor adjudicado en el detalle recibido desde ChileCompra.</p>
+        </section>
+      `;
+    }
+
+    return `
+      <section class="tender-panel">
+        <h3>Proveedores para analitica</h3>
+        <div class="saved-provider-list">
+          ${proveedores.map((proveedor, index) => `
+            <article class="saved-provider-item">
+              <div>
+                <strong>${proveedor.nombreProveedor}</strong>
+                <span>Codigo: ${proveedor.codigoProveedor}${proveedor.rutProveedor && proveedor.rutProveedor !== "-" ? ` | RUT: ${proveedor.rutProveedor}` : ""}</span>
+              </div>
+              <button class="btn-primary save-provider-btn" type="button" data-provider-index="${index}">Guardar</button>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderClienteAction(item) {
+    const cliente = clienteDesdeLicitacion(item);
+    if (!cliente.codigoOrganismo || !cliente.nombreOrganismo) {
+      return `
+        <section class="tender-panel">
+          <h3>Cliente para analitica</h3>
+          <p>Esta licitacion no informa organismo comprador suficiente para guardarlo.</p>
+        </section>
+      `;
+    }
+
+    return `
+      <section class="tender-panel">
+        <h3>Cliente para analitica</h3>
+        <div class="saved-provider-list">
+          <article class="saved-provider-item">
+            <div>
+              <strong>${cliente.nombreOrganismo}</strong>
+              <span>Codigo organismo: ${cliente.codigoOrganismo}${cliente.region && cliente.region !== "-" ? ` | Region: ${cliente.region}` : ""}</span>
+            </div>
+            <button class="btn-primary save-client-btn" type="button">Guardar cliente</button>
+          </article>
+        </div>
+      </section>
+    `;
+  }
+
   function showDetailModal(item) {
     const modal = document.getElementById("detailModal");
     const content = document.getElementById("detailContent");
@@ -271,6 +572,9 @@ document.addEventListener("DOMContentLoaded", () => {
           ${detailMetric("Tipo", `${textAt(item, ["Tipo"])} / ${textAt(item, ["CodigoTipo"])}`)}
           ${detailMetric("Reclamos", formatNumber(valueAt(item, ["CantidadReclamos"], 0)))}
         </section>
+
+        ${renderProveedorActions(item)}
+        ${renderClienteAction(item)}
 
         <div class="tender-layout">
           <section class="tender-panel main">
@@ -327,6 +631,19 @@ document.addEventListener("DOMContentLoaded", () => {
       </article>
     `;
 
+    const proveedores = proveedoresDesdeLicitacion(item);
+    content.querySelectorAll(".save-provider-btn").forEach((button) => {
+      const index = Number(button.dataset.providerIndex);
+      const proveedor = proveedores[index];
+      if (proveedor) {
+        button.addEventListener("click", () => guardarProveedorAnalitica(item, proveedor, button));
+      }
+    });
+
+    content.querySelector(".save-client-btn")?.addEventListener("click", (event) => {
+      guardarClienteAnalitica(item, event.currentTarget);
+    });
+
     modal.style.display = "flex";
   }
 
@@ -377,7 +694,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("buscarBtn").addEventListener("click", loadLicitaciones);
   document.getElementById("limpiarBtn").addEventListener("click", () => {
-    MP.resetFilters(["codigo", "codigoOrganismo", "codigoProveedor"]);
+    MP.resetFilters(["codigo", "texto", "codigoOrganismo", "codigoProveedor"]);
     setDefaultFilters();
     licitaciones = [];
     pageCache = new Map();

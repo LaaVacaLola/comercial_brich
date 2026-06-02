@@ -144,6 +144,61 @@ body {
   margin-bottom: 1rem;
 }
 
+.analytics-selectors {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr) minmax(180px, 0.35fr);
+  margin-bottom: 1rem;
+}
+
+.selector-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: grid;
+  gap: 8px;
+  padding: 1rem;
+}
+
+.selector-card label {
+  color: #0a2f6b;
+  font-weight: 800;
+}
+
+.selector-card select {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  min-height: 150px;
+  padding: 10px;
+}
+
+.selector-card.compact select {
+  min-height: auto;
+}
+
+.selector-row {
+  align-items: stretch;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.selector-row button {
+  align-self: start;
+  min-width: 160px;
+}
+
+.selector-card small {
+  color: #64748b;
+}
+
+.selector-actions {
+  align-items: end;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .filters input,
 .filters select,
 .helper-panel input {
@@ -163,6 +218,54 @@ body {
 
 .status-message.error {
   color: #c0392b;
+}
+
+.progress-panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin: 1rem 0;
+  padding: 1rem;
+}
+
+.progress-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.progress-heading strong {
+  color: #0a2f6b;
+  font-size: 1.4rem;
+}
+
+.progress-heading span {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.progress-track {
+  background: #e2e8f0;
+  border-radius: 999px;
+  height: 12px;
+  margin: 12px 0;
+  overflow: hidden;
+}
+
+.progress-bar {
+  background: #27ae60;
+  height: 100%;
+  transition: width 0.25s ease;
+  width: 0%;
+}
+
+.progress-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #475569;
+  font-size: 0.92rem;
 }
 
 .table-wrapper {
@@ -202,6 +305,17 @@ tr:nth-child(even) {
   border-radius: 999px;
   font-weight: 700;
   font-size: 0.85rem;
+}
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.table-actions .btn-primary,
+.table-actions .btn-secondary {
+  padding: 9px 12px;
 }
 
 .modal {
@@ -434,6 +548,34 @@ tr:nth-child(even) {
   margin-top: 1rem;
 }
 
+.saved-provider-list {
+  display: grid;
+  gap: 10px;
+}
+
+.saved-provider-item {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.saved-provider-item strong {
+  color: #123b6d;
+  display: block;
+}
+
+.saved-provider-item span {
+  color: #64748b;
+  display: block;
+  font-size: 0.86rem;
+  margin-top: 4px;
+}
+
 .pagination-bar {
   align-items: center;
   display: flex;
@@ -537,6 +679,27 @@ button:disabled {
   max-height: 260px;
 }
 
+.analytics-table {
+  margin-top: 1.5rem;
+}
+
+.analytics-table h2 {
+  color: #0a2f6b;
+  margin: 0 0 0.8rem;
+}
+
+.analytics-table-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.analytics-table-heading h2 {
+  margin: 0;
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -631,6 +794,11 @@ button:disabled {
   .analytics-hero {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .analytics-selectors,
+  .selector-row {
+    grid-template-columns: 1fr;
   }
 
   .tender-header,

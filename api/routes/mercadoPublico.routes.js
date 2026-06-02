@@ -21,8 +21,14 @@ router.get("/licitaciones/:codigo", controller.getLicitacionByCodigo);
 router.get("/ordenes", controller.getOrdenes);
 router.get("/ordenes/:codigo", controller.getOrdenByCodigo);
 router.get("/reportes", controller.getReportes);
+router.post("/reportes/jobs", controller.startReporteJob);
+router.get("/reportes/jobs/:id", controller.getReporteJob);
 router.get("/proveedor", controller.getProveedor);
 router.get("/compradores", controller.getCompradores);
+router.get("/proveedores-guardados", controller.getProveedoresGuardados);
+router.post("/proveedores-guardados", controller.saveProveedorGuardado);
+router.get("/clientes-observados", controller.getClientesGuardados);
+router.post("/clientes-observados", controller.saveClienteGuardado);
 
 router.use((req, res) => {
   res.status(404).json({

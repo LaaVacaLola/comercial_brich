@@ -55,6 +55,24 @@ exports.getReportes = async (req, res) => {
   }
 };
 
+exports.startReporteJob = async (req, res) => {
+  try {
+    const data = mercadoPublico.iniciarReporteJob(req.body || {});
+    res.status(202).json(data);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+exports.getReporteJob = async (req, res) => {
+  try {
+    const data = mercadoPublico.obtenerReporteJob(req.params.id);
+    res.json(data);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
 exports.getProveedor = async (req, res) => {
   try {
     const data = await mercadoPublico.buscarProveedor(req.query.rut);
@@ -68,6 +86,58 @@ exports.getCompradores = async (req, res) => {
   try {
     const data = await mercadoPublico.buscarCompradores();
     res.json(data);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+exports.getProveedoresGuardados = async (req, res) => {
+  try {
+    const data = await mercadoPublico.listarProveedoresGuardados();
+    res.json(data);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+exports.saveProveedorGuardado = async (req, res) => {
+  try {
+    const data = await mercadoPublico.guardarProveedorObservado(
+      req.body,
+      req.user?.email || req.user?.uid || null
+    );
+
+    res.json({
+      ok: true,
+      message: "Proveedor guardado para analitica.",
+      proveedor: data,
+    });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+exports.getClientesGuardados = async (req, res) => {
+  try {
+    const data = await mercadoPublico.listarClientesGuardados();
+    res.json(data);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+exports.saveClienteGuardado = async (req, res) => {
+  try {
+    const data = await mercadoPublico.guardarClienteObservado(
+      req.body,
+      req.user?.email || req.user?.uid || null
+    );
+
+    res.json({
+      ok: true,
+      message: "Cliente observado guardado para analitica.",
+      cliente: data,
+    });
   } catch (err) {
     sendError(res, err);
   }
