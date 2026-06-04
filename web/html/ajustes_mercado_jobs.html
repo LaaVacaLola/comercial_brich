@@ -37,15 +37,10 @@
         <thead>
           <tr>
             <th>Entidad</th>
-            <th>Codigo</th>
             <th>Estado</th>
             <th>Avance</th>
-            <th>OC encontradas</th>
             <th>OC procesadas</th>
-            <th>OC omitidas</th>
-            <th>Consultas omitidas</th>
             <th>Actualizado</th>
-            <th>Ultimo log</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -69,6 +64,11 @@
         <strong id="cachePrimeraFecha">-</strong>
         <small>OC mas antigua disponible en base de datos.</small>
       </article>
+      <article class="kpi-card">
+        <span>Ultima OC guardada</span>
+        <strong id="cacheUltimaDescarga">-</strong>
+        <small id="cacheUltimaDescargaCodigo">Ultimo documento insertado o actualizado.</small>
+      </article>
     </section>
 
     <section class="table-wrapper analytics-table">
@@ -86,11 +86,20 @@
             <th>Total</th>
             <th>Estado</th>
             <th>Origen</th>
+            <th>Guardada</th>
           </tr>
         </thead>
         <tbody id="cacheTable"></tbody>
       </table>
     </section>
   </main>
+
+  <div id="detailModal" class="modal">
+    <div class="modal-content wide">
+      <span class="close-btn">&times;</span>
+      <h2>Detalle de job</h2>
+      <div id="detailContent"></div>
+    </div>
+  </div>
 </body>
 </html>

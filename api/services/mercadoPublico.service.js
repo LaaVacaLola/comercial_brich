@@ -765,6 +765,45 @@ function cleanLimit(value) {
   return allowed.has(limit) ? limit : 100;
 }
 
+function cleanPeriodoAnalisis(value) {
+  const clean = String(value || "mes_actual").trim().toLowerCase();
+  const allowed = new Set(["mes_actual", "ultimos_3_meses", "ultimos_6_meses", "ultimo_ano"]);
+  return allowed.has(clean) ? clean : "mes_actual";
+}
+
+function rangoPeriodoAnalisis(value) {
+  const periodo = cleanPeriodoAnalisis(value);
+  const now = new Date();
+  const desde = new Date(now);
+
+  if (periodo === "mes_actual") {
+    desde.setDate(1);
+  } else if (periodo === "ultimos_3_meses") {
+    desde.setMonth(desde.getMonth() - 3);
+  } else if (periodo === "ultimos_6_meses") {
+    desde.setMonth(desde.getMonth() - 6);
+  } else {
+    desde.setFullYear(desde.getFullYear() - 1);
+  }
+
+  desde.setHours(0, 0, 0, 0);
+  now.setHours(23, 59, 59, 999);
+
+  const labels = {
+    mes_actual: "Mes actual",
+    ultimos_3_meses: "Ultimos 3 meses",
+    ultimos_6_meses: "Ultimos 6 meses",
+    ultimo_ano: "Ultimo ano",
+  };
+
+  return {
+    periodo,
+    label: labels[periodo],
+    fechaDesde: desde,
+    fechaHasta: now,
+  };
+}
+
 function lastYearApiDates() {
   const today = new Date();
   const start = new Date();
@@ -811,7 +850,7 @@ async function fechaContinuacionCache(entidadTipo, entidadCodigo) {
   return next;
 }
 
-async function listarOrdenesPorEntidadUltimoAno(paramsPorDia, maxOrdenes, progress, cursorDate, cancelJobId) {
+async function listarOrdenesPorEntidadUltimoAno(paramsPorDia, maxOrdenes, progress, cursorDate, cancelJobId, onOrdenesEncontradas) {
   const ticket = await getTicket();
   const fechas = lastYearApiDatesDescending(cursorDate);
   const byCode = new Map();
@@ -831,14 +870,24 @@ async function listarOrdenesPorEntidadUltimoAno(paramsPorDia, maxOrdenes, progre
       const listado = getListado(data);
       if (cancelJobId) await appendJobLog(cancelJobId, `Fecha ${fecha}: ${listado.length} OC recibidas`);
 
+      const nuevas = [];
       listado.forEach((orden) => {
         const code = orden.Codigo || orden.CodigoOC;
-        if (code && byCode.size < maxOrdenes) byCode.set(code, orden);
+        if (code && byCode.size < maxOrdenes && !byCode.has(code)) {
+          byCode.set(code, orden);
+          nuevas.push(orden);
+        }
       });
 
       if (progress) {
         progress.consultasProcesadas += 1;
         progress.ocEncontradas = Math.max(progress.ocEncontradas, byCode.size);
+      }
+
+      if (nuevas.length && onOrdenesEncontradas) {
+        if (cancelJobId) await appendJobLog(cancelJobId, `Fecha ${fecha}: pausando busqueda para procesar ${nuevas.length} OC`);
+        await onOrdenesEncontradas(nuevas, fecha);
+        if (cancelJobId) await appendJobLog(cancelJobId, `Fecha ${fecha}: procesamiento terminado, continua busqueda`);
       }
 
       if (byCode.size >= maxOrdenes) break;
@@ -913,7 +962,7 @@ function publicPersistentJob(job) {
     entidadCodigo: job.entidadCodigo,
     entidadNombre: job.entidadNombre,
     progress: job.progress,
-    logs: (job.logs || []).slice(-8),
+    logs: (job.logs || []).slice(-60),
     result: job.result,
     error: job.error,
     createdAt: job.createdAt,
@@ -945,7 +994,13 @@ function ordenCacheFromRaw(raw, origen) {
     proveedorNombre: resumen.proveedor.nombre || "",
     compradorCodigo: resumen.comprador.codigoOrganismo || "",
     compradorNombre: resumen.comprador.nombreOrganismo || "",
-    fecha: cleanDateValue(raw?.Fechas?.FechaEnvio || raw?.Fechas?.FechaCreacion),
+    fecha: cleanDateValue(
+      raw?.Fechas?.FechaEnvio ||
+      raw?.Fechas?.FechaCreacion ||
+      raw?.FechaEnvio ||
+      raw?.FechaCreacion ||
+      raw?.Fecha
+    ),
     estado: resumen.estado,
     total: resumen.total,
     origenes: [origen],
@@ -956,14 +1011,19 @@ function ordenCacheFromRaw(raw, origen) {
 
 async function guardarOrdenCache(raw, origen) {
   const data = ordenCacheFromRaw(raw, origen);
-  if (!data.codigo) return false;
+  if (!data.codigo) {
+    return {
+      ok: false,
+      reason: "El detalle recibido no trae Codigo/CodigoOC",
+    };
+  }
 
   const current = await MercadoPublicoOrdenCache.findOne({ codigo: data.codigo }).lean();
   const origenes = current?.origenes || [];
   const exists = origenes.some((item) => item.tipo === origen.tipo && item.codigo === origen.codigo);
   if (!exists) origenes.push(origen);
 
-  await MercadoPublicoOrdenCache.findOneAndUpdate(
+  const saved = await MercadoPublicoOrdenCache.findOneAndUpdate(
     { codigo: data.codigo },
     {
       $set: {
@@ -972,9 +1032,17 @@ async function guardarOrdenCache(raw, origen) {
       },
     },
     { upsert: true, new: true }
-  );
+  ).lean();
 
-  return true;
+  return {
+    ok: Boolean(saved),
+    codigo: saved?.codigo || data.codigo,
+    proveedorNombre: saved?.proveedorNombre || data.proveedorNombre,
+    compradorNombre: saved?.compradorNombre || data.compradorNombre,
+    total: saved?.total || data.total,
+    fecha: saved?.fecha || data.fecha,
+    origenes: saved?.origenes || origenes,
+  };
 }
 
 async function isJobCancelled(jobId) {
@@ -1068,13 +1136,18 @@ async function ejecutarProcesamientoOrdenJob(jobId) {
       job.progress.ocOmitidas = 1;
       await appendJobLog(jobId, `OC ${codigo} omitida: ${detalle.errorDetalle}`);
     } else {
-      await guardarOrdenCache(detalle, job.params?.origen || {
+      const saved = await guardarOrdenCache(detalle, job.params?.origen || {
         tipo: "proveedor",
         codigo: "",
         nombre: "",
       });
-      job.progress.ocProcesadas = 1;
-      await appendJobLog(jobId, `OC ${codigo} guardada en cache`);
+      if (saved.ok) {
+        job.progress.ocProcesadas = 1;
+        await appendJobLog(jobId, `OC ${codigo} guardada en cache MongoDB (${saved.proveedorNombre || "sin proveedor"} / ${saved.compradorNombre || "sin comprador"})`);
+      } else {
+        job.progress.ocOmitidas = 1;
+        await appendJobLog(jobId, `OC ${codigo} no fue guardada: ${saved.reason || "datos insuficientes"}`);
+      }
     }
 
     job.progress.consultasProcesadas = 1;
@@ -1125,12 +1198,14 @@ async function iniciarDescargaOrdenesJob({ entidadTipo, entidadCodigo, entidadNo
     },
   });
 
+  await appendJobLog(String(job._id), `Job creado para ${entidadTipo} ${entidadCodigo} - ${entidadNombre}`);
   enqueueDescargaOrdenesJob(String(job._id));
   return publicPersistentJob(job);
 }
 
 function enqueueDescargaOrdenesJob(jobId) {
   if (!downloadJobQueue.includes(jobId)) downloadJobQueue.push(jobId);
+  appendJobLog(jobId, `Job agregado a cola principal. Pendientes en cola: ${downloadJobQueue.length}`).catch(() => {});
   runDescargaOrdenesQueue().catch(() => {});
 }
 
@@ -1166,7 +1241,60 @@ async function ejecutarDescargaOrdenesJob(jobId) {
     await appendJobLog(jobId, cursorDate
       ? `Continuando desde ${cursorDate.toISOString().slice(0, 10)} hacia atras`
       : "Sin cache previo: comenzando desde la OC mas nueva hacia atras");
-    const ordenesBase = await listarOrdenesPorEntidadUltimoAno(params, OC_DOWNLOAD_MAX_PER_ENTITY, progress, cursorDate, jobId);
+    const procesarOrdenesDeFecha = async (ordenesFecha, fecha) => {
+      const codigosFecha = ordenesFecha
+        .map((orden) => orden.Codigo || orden.CodigoOC)
+        .filter(Boolean);
+
+      for (const codigo of codigosFecha) {
+        if (await isJobCancelled(jobId)) {
+          await updatePersistentJob(jobId, { status: "cancelled", progress });
+          return;
+        }
+
+        await appendJobLog(jobId, `Fecha ${fecha} / OC ${codigo}: descargando detalle antes de seguir buscando`);
+        const detalle = await obtenerDetalleOrdenSeguro(codigo);
+        await appendJobLog(jobId, `Fecha ${fecha} / OC ${codigo}: respuesta de detalle recibida`);
+        const resumenDetalle = resumenOrdenAnalitica(detalle);
+        await appendJobLog(
+          jobId,
+          `Fecha ${fecha} / OC ${codigo}: detalle normalizado codigo=${resumenDetalle.codigo || "sin codigo"}, proveedor=${resumenDetalle.proveedor.nombre || "sin proveedor"}, cliente=${resumenDetalle.comprador.nombreOrganismo || "sin cliente"}`
+        );
+
+        if (detalle.errorDetalle) {
+          progress.ocOmitidas += 1;
+          await appendJobLog(jobId, `Fecha ${fecha} / OC ${codigo}: omitida (${detalle.errorDetalle})`);
+        } else {
+          const saved = await guardarOrdenCache(detalle, {
+            tipo: job.entidadTipo,
+            codigo: job.entidadCodigo,
+            nombre: job.entidadNombre,
+          });
+
+          if (saved.ok) {
+            progress.ocProcesadas += 1;
+            await appendJobLog(jobId, `Fecha ${fecha} / OC ${codigo}: cache MongoDB OK (${saved.proveedorNombre || "sin proveedor"} / ${saved.compradorNombre || "sin comprador"} / total ${saved.total || 0}). Total procesadas: ${progress.ocProcesadas}`);
+          } else {
+            progress.ocOmitidas += 1;
+            await appendJobLog(jobId, `Fecha ${fecha} / OC ${codigo}: omitida (${saved.reason || "datos insuficientes"})`);
+          }
+        }
+
+        progress.totalObjetivo = Math.max(progress.totalObjetivo || 0, progress.ocEncontradas || 0);
+        progress.porcentaje = Math.min(100, Math.round(((progress.ocProcesadas + progress.ocOmitidas) / Math.max(1, progress.totalObjetivo)) * 100));
+        await updatePersistentJob(jobId, { progress });
+        await appendJobLog(jobId, `Fecha ${fecha} / OC ${codigo}: progreso ${progress.porcentaje}% (${progress.ocProcesadas} procesadas, ${progress.ocOmitidas} omitidas)`);
+      }
+    };
+
+    const ordenesBase = await listarOrdenesPorEntidadUltimoAno(
+      params,
+      OC_DOWNLOAD_MAX_PER_ENTITY,
+      progress,
+      cursorDate,
+      jobId,
+      procesarOrdenesDeFecha
+    );
     if (await isJobCancelled(jobId)) {
       await updatePersistentJob(jobId, { status: "cancelled", progress });
       return;
@@ -1181,39 +1309,7 @@ async function ejecutarDescargaOrdenesJob(jobId) {
     progress.totalObjetivo = codigos.length || OC_DOWNLOAD_MAX_PER_ENTITY;
     progress.ocEncontradas = codigos.length;
     await updatePersistentJob(jobId, { progress });
-    await appendJobLog(jobId, `${codigos.length} OC encontradas para encolar procesamiento`);
-
-    for (const codigo of codigos) {
-      if (await isJobCancelled(jobId)) {
-        await updatePersistentJob(jobId, { status: "cancelled", progress });
-        return;
-      }
-
-      await appendJobLog(jobId, `OC ${codigo}: descargando detalle`);
-      const detalle = await obtenerDetalleOrdenSeguro(codigo);
-
-      if (detalle.errorDetalle) {
-        progress.ocOmitidas += 1;
-        await appendJobLog(jobId, `OC ${codigo}: omitida (${detalle.errorDetalle})`);
-      } else {
-        const saved = await guardarOrdenCache(detalle, {
-          tipo: job.entidadTipo,
-          codigo: job.entidadCodigo,
-          nombre: job.entidadNombre,
-        });
-
-        if (saved) {
-          progress.ocProcesadas += 1;
-          await appendJobLog(jobId, `OC ${codigo}: guardada en cache`);
-        } else {
-          progress.ocOmitidas += 1;
-          await appendJobLog(jobId, `OC ${codigo}: omitida por datos insuficientes`);
-        }
-      }
-
-      progress.porcentaje = Math.min(100, Math.round(((progress.ocProcesadas + progress.ocOmitidas) / Math.max(1, progress.totalObjetivo)) * 100));
-      await updatePersistentJob(jobId, { progress });
-    }
+    await appendJobLog(jobId, `${codigos.length} OC encontradas en total. Todas las OC encontradas fueron procesadas durante la busqueda por fecha.`);
 
     await updatePersistentJob(jobId, {
       status: "complete",
@@ -1272,21 +1368,26 @@ async function sincronizarEntidadesGuardadas() {
   const proveedores = await MercadoPublicoProveedor.find({}).lean();
   const clientes = await MercadoPublicoCliente.find({}).lean();
   const jobs = [];
+  console.log(`[MercadoPublicoJob] Sincronizando ${proveedores.length} proveedores y ${clientes.length} clientes guardados`);
 
   for (const proveedor of proveedores) {
-    jobs.push(await iniciarDescargaOrdenesJob({
+    const job = await iniciarDescargaOrdenesJob({
       entidadTipo: "proveedor",
       entidadCodigo: proveedor.codigoProveedor,
       entidadNombre: proveedor.nombreProveedor,
-    }));
+    });
+    await appendJobLog(job.id, "Sincronizacion masiva: proveedor incluido");
+    jobs.push(job);
   }
 
   for (const cliente of clientes) {
-    jobs.push(await iniciarDescargaOrdenesJob({
+    const job = await iniciarDescargaOrdenesJob({
       entidadTipo: "cliente",
       entidadCodigo: cliente.codigoOrganismo,
       entidadNombre: cliente.nombreOrganismo,
-    }));
+    });
+    await appendJobLog(job.id, "Sincronizacion masiva: cliente incluido");
+    jobs.push(job);
   }
 
   return {
@@ -1303,8 +1404,12 @@ async function listarOrdenesCacheResumen() {
   const oldest = await MercadoPublicoOrdenCache.findOne({ fecha: { $ne: null } })
     .sort({ fecha: 1 })
     .lean();
+  const latestDownload = await MercadoPublicoOrdenCache.findOne({})
+    .sort({ downloadedAt: -1, updatedAt: -1 })
+    .select("downloadedAt updatedAt codigo")
+    .lean();
   const ordenes = await MercadoPublicoOrdenCache.find({})
-    .sort({ fecha: -1, updatedAt: -1 })
+    .sort({ downloadedAt: -1, updatedAt: -1 })
     .limit(100)
     .select("codigo proveedorNombre compradorNombre fecha estado total origenes downloadedAt updatedAt")
     .lean();
@@ -1313,6 +1418,8 @@ async function listarOrdenesCacheResumen() {
     total,
     ultimaFecha: latest?.fecha || null,
     primeraFecha: oldest?.fecha || null,
+    ultimaDescarga: latestDownload?.downloadedAt || latestDownload?.updatedAt || null,
+    ultimaDescargaCodigo: latestDownload?.codigo || null,
     Cantidad: ordenes.length,
     Listado: ordenes.map((orden) => ({
       codigo: orden.codigo,
@@ -1372,7 +1479,7 @@ async function obtenerReportesOrdenesSeleccionadas(query = {}, progress) {
   const modoAnalisis = query.modoAnalisis === "clientes" ? "clientes" : "proveedores";
   const proveedoresSeleccionados = selectedCodesArray(query.proveedoresObservados || query.codigoProveedoresObservados, "codigoProveedor");
   const clientesSeleccionados = selectedCodesFromQuery(query.clientesObservados || query.codigoClientesObservados);
-  const maxOrdenes = cleanLimit(query.limiteOrdenes);
+  const periodoAnalisis = rangoPeriodoAnalisis(query.periodoAnalisis);
 
   const proveedoresGuardados = await obtenerAnaliticaProveedoresGuardados();
   const clientesGuardados = await obtenerAnaliticaClientesGuardados(query);
@@ -1427,13 +1534,17 @@ async function obtenerReportesOrdenesSeleccionadas(query = {}, progress) {
     filter.compradorCodigo = { $in: Array.from(clientesSeleccionados) };
   }
 
+  filter.fecha = {
+    $gte: periodoAnalisis.fechaDesde,
+    $lte: periodoAnalisis.fechaHasta,
+  };
+
   const cached = await MercadoPublicoOrdenCache.find(filter)
     .sort({ fecha: -1, updatedAt: -1 })
-    .limit(maxOrdenes)
     .lean();
 
   if (progress) {
-    progress.totalObjetivo = cached.length || maxOrdenes;
+    progress.totalObjetivo = cached.length;
     progress.ocEncontradas = cached.length;
     progress.ocProcesadas = cached.length;
     progress.ocOmitidas = 0;
@@ -1472,7 +1583,10 @@ async function obtenerReportesOrdenesSeleccionadas(query = {}, progress) {
     filtros: {
       modoAnalisis,
       fuente: "oc_cache",
-      limiteOrdenes: maxOrdenes,
+      periodoAnalisis: periodoAnalisis.periodo,
+      periodoLabel: periodoAnalisis.label,
+      fechaDesde: periodoAnalisis.fechaDesde,
+      fechaHasta: periodoAnalisis.fechaHasta,
       proveedoresObservados: proveedoresSeleccionados,
       clientesObservados: clientesSeleccionados ? Array.from(clientesSeleccionados) : [],
     },
@@ -1522,7 +1636,7 @@ function iniciarReporteJob(query = {}) {
     status: "running",
     progress: {
       porcentaje: 0,
-      totalObjetivo: cleanLimit(query.limiteOrdenes),
+      totalObjetivo: 0,
       consultasProcesadas: 0,
       consultasOmitidas: 0,
       ocEncontradas: 0,

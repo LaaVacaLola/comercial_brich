@@ -25,11 +25,11 @@
       <div>
         <span class="eyebrow">ChileCompra / Mercado Publico</span>
         <h1>Analitica de ordenes de compra</h1>
-        <p class="subtitle">Selecciona proveedores y clientes observados para analizar sus OC del ultimo ano: productos comprados, montos, compradores y estados.</p>
+        <p class="subtitle">Selecciona proveedores y clientes observados para analizar sus OC cacheadas por periodo: productos comprados, montos, compradores y estados.</p>
       </div>
       <div class="hero-badge">
         <span>Periodo</span>
-        <strong>Ultimos 365 dias</strong>
+        <strong>Seleccionable</strong>
       </div>
     </section>
 
@@ -51,15 +51,14 @@
         <small>Obligatorio para analisis de clientes. Consulta OC por organismo comprador.</small>
       </div>
       <div class="selector-card compact">
-        <label for="limiteOrdenes">Cantidad maxima de OC</label>
-        <select id="limiteOrdenes">
-          <option value="50">50</option>
-          <option value="100" selected>100</option>
-          <option value="250">250</option>
-          <option value="500">500</option>
-          <option value="1000">1000</option>
+        <label for="periodoAnalisis">Periodo a analizar</label>
+        <select id="periodoAnalisis">
+          <option value="mes_actual" selected>Mes actual</option>
+          <option value="ultimos_3_meses">Ultimos 3 meses</option>
+          <option value="ultimos_6_meses">Ultimos 6 meses</option>
+          <option value="ultimo_ano">Ultimo ano</option>
         </select>
-        <small>Aplica a proveedores y clientes.</small>
+        <small>Filtra las OC cacheadas por fecha de la orden.</small>
       </div>
     </section>
 
@@ -85,7 +84,7 @@
       <article class="kpi-card">
         <span>Total OC</span>
         <strong id="totalOrdenes">0</strong>
-        <small>Ordenes de compra recuperadas y detalladas desde ChileCompra.</small>
+        <small>Ordenes de compra cacheadas dentro del periodo seleccionado.</small>
       </article>
       <article class="kpi-card">
         <span>Monto total</span>

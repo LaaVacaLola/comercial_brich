@@ -10,8 +10,13 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter(Boolean);
   }
 
-  function selectedLimit() {
-    return document.getElementById("limiteOrdenes")?.value || "100";
+  function selectedPeriodo() {
+    return document.getElementById("periodoAnalisis")?.value || "mes_actual";
+  }
+
+  function selectedPeriodoLabel() {
+    const select = document.getElementById("periodoAnalisis");
+    return select?.selectedOptions?.[0]?.textContent || "Mes actual";
   }
 
   function sleep(ms) {
@@ -182,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const procesadas = Number(progress.ocProcesadas || 0) + Number(progress.ocOmitidas || 0);
     document.getElementById("progressText").textContent = status === "complete"
       ? "Analitica completa."
-      : `Procesando ${procesadas} de ${total} OC objetivo. Consultas API: ${progress.consultasProcesadas || 0}.`;
+      : `Procesando ${procesadas} de ${total} OC cacheadas para el periodo seleccionado.`;
   }
 
   function renderReport(data, seleccionados, modo) {
@@ -218,12 +223,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
+      const periodoLabel = selectedPeriodoLabel();
       MP.setMessage(modo === "clientes"
-        ? `Consultando hasta ${selectedLimit()} OC por clientes con cola lenta anti-429...`
-        : `Consultando hasta ${selectedLimit()} OC por proveedores con cola lenta anti-429...`);
+        ? `Analizando OC cacheadas de clientes para ${periodoLabel}...`
+        : `Analizando OC cacheadas de proveedores para ${periodoLabel}...`);
       const params = new URLSearchParams();
       params.set("modoAnalisis", modo);
-      params.set("limiteOrdenes", selectedLimit());
+      params.set("periodoAnalisis", selectedPeriodo());
       if (modo === "clientes") {
         params.set("clientesObservados", clientes.join(","));
       } else {
@@ -252,7 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       renderReport(data, modo === "clientes" ? clientes : proveedores, modo);
       cargarAnalisisGuardados();
-      MP.setMessage(`Analitica generada con ${data.resumen?.totalOrdenes || 0} OC.`);
+      MP.setMessage(`Analitica generada con ${data.resumen?.totalOrdenes || 0} OC para ${data.filtros?.periodoLabel || periodoLabel}.`);
     } catch (err) {
       MP.setMessage(err.message, true);
     }
