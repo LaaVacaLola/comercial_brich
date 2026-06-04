@@ -174,8 +174,8 @@ body {
 
 .analytics-selectors {
   display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr) minmax(180px, 0.35fr);
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   margin-bottom: 1rem;
 }
 
@@ -183,22 +183,23 @@ body {
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.07);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
   display: grid;
-  gap: 8px;
-  padding: 1rem;
+  gap: 6px;
+  padding: 0.75rem;
 }
 
 .selector-card label {
   color: #08306b;
+  font-size: 0.86rem;
   font-weight: 800;
 }
 
 .selector-card select {
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  min-height: 150px;
-  padding: 10px;
+  border-radius: 6px;
+  min-height: 38px;
+  padding: 0.5rem 0.65rem;
   outline: none;
 }
 
@@ -216,19 +217,22 @@ body {
 }
 
 .selector-row {
-  align-items: stretch;
+  align-items: center;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .selector-row button {
-  align-self: start;
-  min-width: 160px;
+  align-self: center;
+  min-width: 96px;
+  padding: 0.58rem 0.85rem;
 }
 
 .selector-card small {
   color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.25;
 }
 
 .selector-actions {
@@ -787,12 +791,18 @@ button:disabled {
 
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
 .chart-card {
   min-height: 320px;
+}
+
+.chart-card,
+.chart-card-featured {
+  grid-column: span 2;
+  min-height: 420px;
 }
 
 .chart-card h2 {
@@ -811,6 +821,113 @@ button:disabled {
   max-height: 260px;
 }
 
+.chart-card-featured canvas {
+  max-height: 350px;
+}
+
+.year-charts {
+  display: grid;
+  gap: 14px;
+}
+
+.year-chart-card {
+  background: #f8fafc;
+  border: 1px solid #dbe4ef;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.year-chart-card canvas {
+  max-height: 240px;
+}
+
+.chart-select {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #1f2937;
+  margin-bottom: 12px;
+  min-height: 38px;
+  outline: none;
+  padding: 0.5rem 0.65rem;
+  width: 100%;
+}
+
+.year-chart-block {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 12px;
+}
+
+.year-chart-block:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.year-chart-block h3 {
+  color: #334155;
+  font-size: 0.95rem;
+  margin: 0 0 8px;
+}
+
+.empty-chart {
+  color: #64748b;
+  margin: 1rem 0 0;
+}
+
+.segmented-control {
+  background: #e8f0fa;
+  border: 1px solid #cbd8ea;
+  border-radius: 7px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, 1fr);
+  padding: 3px;
+}
+
+.segmented-control button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #24415f;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 800;
+  padding: 0.48rem 0.7rem;
+}
+
+.segmented-control button.active {
+  background: #08306b;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(8, 48, 107, 0.22);
+}
+
+.selected-entities-card {
+  min-height: 108px;
+}
+
+.selected-entities {
+  align-content: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 38px;
+}
+
+.selected-chip {
+  background: #e6f2ff;
+  border: 1px solid #a9c9ef;
+  border-radius: 999px;
+  color: #08306b;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.38rem 0.65rem;
+}
+
+.empty-selection {
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
 .analytics-table {
   margin-top: 1.5rem;
 }
@@ -826,6 +943,48 @@ button:disabled {
   gap: 12px;
   justify-content: space-between;
   margin-bottom: 0.8rem;
+}
+
+.table-pager {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.table-pager span {
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 700;
+  min-width: 48px;
+  text-align: center;
+}
+
+.pager-btn {
+  font-size: 0.85rem;
+  padding: 0.55rem 0.8rem;
+}
+
+.pager-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+@media (max-width: 760px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card,
+  .chart-card-featured {
+    grid-column: span 1;
+  }
+
+  .analytics-table-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
 }
 
 .analytics-table-heading h2 {

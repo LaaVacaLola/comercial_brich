@@ -24,6 +24,7 @@ router.get("/reportes", controller.getReportes);
 router.post("/reportes/jobs", controller.startReporteJob);
 router.get("/reportes/jobs/:id", controller.getReporteJob);
 router.get("/reportes/guardados", controller.getAnalisisGuardados);
+router.post("/reportes/guardados", controller.saveAnalisisGenerado);
 router.get("/oc-jobs", controller.getDescargaOrdenesJobs);
 router.put("/oc-jobs/:id/cancel", controller.cancelJob);
 router.post("/oc-jobs/sync", controller.syncEntidadesGuardadas);

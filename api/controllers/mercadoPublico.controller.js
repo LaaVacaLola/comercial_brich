@@ -126,6 +126,18 @@ exports.getAnalisisGuardados = async (req, res) => {
   }
 };
 
+exports.saveAnalisisGenerado = async (req, res) => {
+  try {
+    const data = await mercadoPublico.guardarAnalisisGenerado(
+      req.body,
+      req.user?.email || req.user?.uid || null
+    );
+    res.status(201).json(data);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
 exports.getProveedor = async (req, res) => {
   try {
     const data = await mercadoPublico.buscarProveedor(req.query.rut);

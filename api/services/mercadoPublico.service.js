@@ -1542,16 +1542,17 @@ async function obtenerReportesOrdenesSeleccionadas(query = {}, progress) {
   const cached = await MercadoPublicoOrdenCache.find(filter)
     .sort({ fecha: -1, updatedAt: -1 })
     .lean();
+  const cachedAnalizables = cached.filter((item) => esOrdenAnalizable(item.raw));
 
   if (progress) {
-    progress.totalObjetivo = cached.length;
+    progress.totalObjetivo = cachedAnalizables.length;
     progress.ocEncontradas = cached.length;
-    progress.ocProcesadas = cached.length;
-    progress.ocOmitidas = 0;
+    progress.ocProcesadas = cachedAnalizables.length;
+    progress.ocOmitidas = cached.length - cachedAnalizables.length;
     progress.porcentaje = 100;
   }
 
-  const ordenes = cached.map((item) => resumenOrdenAnalitica(item.raw));
+  const ordenes = cachedAnalizables.map((item) => resumenOrdenAnalitica(item.raw));
 
   const productos = new Map();
   const clientes = new Map();
@@ -1587,6 +1588,7 @@ async function obtenerReportesOrdenesSeleccionadas(query = {}, progress) {
       periodoLabel: periodoAnalisis.label,
       fechaDesde: periodoAnalisis.fechaDesde,
       fechaHasta: periodoAnalisis.fechaHasta,
+      estadosIncluidos: ["En proceso", "Aceptada", "Recepcion conforme", "Pendiente recepcion"],
       proveedoresObservados: proveedoresSeleccionados,
       clientesObservados: clientesSeleccionados ? Array.from(clientesSeleccionados) : [],
     },
@@ -1606,15 +1608,33 @@ async function obtenerReportesOrdenesSeleccionadas(query = {}, progress) {
     fuente: "Direccion ChileCompra - API Mercado Publico",
   };
 
-  await MercadoPublicoAnalisis.create({
+  return result;
+}
+
+async function guardarAnalisisGenerado(payload = {}, solicitadoPor) {
+  const resultado = payload.resultado || payload;
+  const modoAnalisis = resultado?.filtros?.modoAnalisis === "clientes" ? "clientes" : "proveedores";
+
+  if (!resultado?.resumen || !resultado?.filtros) {
+    const err = new Error("No hay un analisis valido para guardar");
+    err.status = 400;
+    throw err;
+  }
+
+  const saved = await MercadoPublicoAnalisis.create({
     modoAnalisis,
-    filtros: result.filtros,
-    resumen: result.resumen,
-    resultado: result,
-    solicitadoPor: query.solicitadoPor || null,
+    filtros: resultado.filtros,
+    resumen: resultado.resumen,
+    resultado,
+    solicitadoPor: solicitadoPor || payload.solicitadoPor || null,
   });
 
-  return result;
+  return {
+    ok: true,
+    message: "Analisis guardado correctamente.",
+    id: saved._id,
+    createdAt: saved.createdAt,
+  };
 }
 
 function publicJob(job) {
@@ -1864,6 +1884,25 @@ function estadoOrdenTexto(item) {
   return estados[codigoEstado] || `Estado ${codigoEstado || "Sin informacion"}`;
 }
 
+function esOrdenAnalizable(item = {}) {
+  const codigoEstado = Number(item?.CodigoEstado || item?.codigoEstado || 0);
+  const estadosPermitidos = new Set([5, 6, 12, 13]);
+  if (estadosPermitidos.has(codigoEstado)) return true;
+
+  const estado = estadoOrdenTexto(item)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (estado.includes("cancelada")) return false;
+  return (
+    estado.includes("en proceso") ||
+    estado.includes("aceptada") ||
+    estado.includes("recepcion conforme") ||
+    estado.includes("pendiente recepcion")
+  );
+}
+
 function fechaOrdenTexto(item) {
   const raw = firstText(item, ["FechaEnvio", "FechaCreacion", "Fecha", "fecha"]);
   if (raw === "Sin informacion") return raw;
@@ -1943,6 +1982,7 @@ module.exports = {
   sincronizarEntidadesGuardadas,
   listarOrdenesCacheResumen,
   listarAnalisisGuardados,
+  guardarAnalisisGenerado,
   obtenerEstadoConfiguracion,
   guardarTicket,
 };

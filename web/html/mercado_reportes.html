@@ -35,20 +35,25 @@
 
     <section class="analytics-selectors">
       <div class="selector-card">
-        <label for="proveedorSelector">Proveedores observados</label>
-        <div class="selector-row">
-          <select id="proveedorSelector" multiple></select>
-          <button id="analizarProveedoresBtn" class="btn-primary" type="button">Analizar proveedores</button>
+        <label>Tipo de analisis</label>
+        <div class="segmented-control" id="tipoAnalisisControl">
+          <button class="active" data-modo="proveedores" type="button">Proveedor</button>
+          <button data-modo="clientes" type="button">Cliente</button>
         </div>
-        <small>Obligatorio. Se consultan OC por codigo proveedor.</small>
+        <small>Cambia entre analizar ventas de proveedores o compras de clientes.</small>
       </div>
       <div class="selector-card">
-        <label for="clienteSelector">Clientes observados</label>
+        <label for="entidadSelector">Entidad guardada</label>
         <div class="selector-row">
-          <select id="clienteSelector" multiple></select>
-          <button id="analizarClientesBtn" class="btn-secondary" type="button">Analizar clientes</button>
+          <select id="entidadSelector"></select>
+          <button id="agregarEntidadBtn" class="btn-secondary" type="button">Agregar</button>
         </div>
-        <small>Obligatorio para analisis de clientes. Consulta OC por organismo comprador.</small>
+        <small>Agrega una o mas entidades al analisis actual.</small>
+      </div>
+      <div class="selector-card selected-entities-card">
+        <label>Seleccionados</label>
+        <div id="entidadesSeleccionadas" class="selected-entities"></div>
+        <small>Quita elementos para recalcular el analisis.</small>
       </div>
       <div class="selector-card compact">
         <label for="periodoAnalisis">Periodo a analizar</label>
@@ -60,9 +65,12 @@
         </select>
         <small>Filtra las OC cacheadas por fecha de la orden.</small>
       </div>
+      <div class="selector-card compact">
+        <label>Guardar resultado</label>
+        <button id="guardarAnalisisBtn" class="btn-primary" type="button" disabled>Guardar analisis</button>
+        <small>Disponible despues de generar un resultado.</small>
+      </div>
     </section>
-
-    <p id="statusMessage" class="status-message">Selecciona proveedores o clientes y genera el analisis correspondiente.</p>
 
     <section class="progress-panel" aria-label="Progreso carga analitica">
       <div class="progress-heading">
@@ -104,30 +112,34 @@
     </section>
 
     <section class="charts-grid">
-      <div class="chart-card">
-        <h2>Que compraron</h2>
-        <p>Productos con mayor monto o cantidad dentro de las OC detalladas.</p>
+      <div class="chart-card chart-card-featured">
+        <h2 id="productosMontoTitle">Productos por monto</h2>
+        <p id="productosMontoDesc">Productos o servicios con mayor monto acumulado dentro de las OC detalladas.</p>
         <canvas id="productosCompradosChart"></canvas>
       </div>
       <div class="chart-card">
-        <h2>Quien compro</h2>
-        <p>Organismos compradores con mayor monto acumulado.</p>
-        <canvas id="clientesCompradoresChart"></canvas>
+        <h2 id="productoEntidadTitle">Producto por proveedor</h2>
+        <p id="productoEntidadDesc">Relacion entre productos o servicios y las entidades del analisis.</p>
+        <select id="productoEntidadSelector" class="chart-select"></select>
+        <canvas id="productoEntidadChart"></canvas>
       </div>
       <div class="chart-card">
-        <h2>Montos por fecha</h2>
-        <p>Evolucion del monto de OC por fecha.</p>
-        <canvas id="fechasChart"></canvas>
+        <h2 id="relacionesTitle">Proveedores principales</h2>
+        <p id="relacionesDesc">Proveedores que mas venden a los clientes seleccionados.</p>
+        <canvas id="relacionesChart"></canvas>
       </div>
       <div class="chart-card">
-        <h2>OC por estado</h2>
-        <p>Distribucion administrativa de las ordenes encontradas.</p>
-        <canvas id="estadosChart"></canvas>
+        <h2>Montos por mes</h2>
+        <p>Evolucion mensual del monto de OC. Se separa en un grafico por cada ano del periodo.</p>
+        <div id="fechasPorAnoCharts" class="year-charts"></div>
       </div>
     </section>
 
     <section class="table-wrapper analytics-table">
-      <h2>Ordenes de compra analizadas</h2>
+      <div class="analytics-table-heading">
+        <h2>Ordenes de compra analizadas</h2>
+        <div id="ordenesPager" class="table-pager"></div>
+      </div>
       <table>
         <thead>
           <tr>
@@ -146,7 +158,10 @@
     <section class="table-wrapper analytics-table">
       <div class="analytics-table-heading">
         <h2>Analisis guardados</h2>
-        <button id="refreshAnalisisBtn" class="btn-secondary" type="button">Actualizar</button>
+        <div class="table-toolbar">
+          <div id="analisisPager" class="table-pager"></div>
+          <button id="refreshAnalisisBtn" class="btn-secondary" type="button">Actualizar</button>
+        </div>
       </div>
       <table>
         <thead>
@@ -155,7 +170,7 @@
             <th>Tipo</th>
             <th>OC</th>
             <th>Monto total</th>
-            <th>Filtros</th>
+            <th>Accion</th>
           </tr>
         </thead>
         <tbody id="analisisGuardadosTable"></tbody>
