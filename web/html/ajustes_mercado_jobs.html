@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jobs Mercado Publico</title>
+  <link rel="stylesheet" href="../css/mercado_publico.css">
+  <link rel="stylesheet" href="../css/admin_nav.css">
+  <script defer src="../js/admin_nav.js"></script>
+  <script defer src="../js/mercado_common.js"></script>
+  <script defer src="../js/ajustes_mercado_jobs.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
+  </header>
+
+  <main class="container">
+    <h1>Descarga de OC Mercado Publico</h1>
+    <p class="subtitle">Monitorea los trabajos que descargan y cachean ordenes de compra del ultimo ano.</p>
+
+    <p id="statusMessage" class="status-message">Cargando jobs...</p>
+
+    <section class="table-wrapper analytics-table">
+      <div class="analytics-table-heading">
+        <h2>Jobs de descarga</h2>
+        <div class="table-toolbar">
+          <button id="syncJobsBtn" class="btn-primary" type="button">Sincronizar guardados</button>
+          <button id="refreshJobsBtn" class="btn-secondary" type="button">Actualizar</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Entidad</th>
+            <th>Estado</th>
+            <th>Avance</th>
+            <th>OC procesadas</th>
+            <th>Actualizado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="jobsTable"></tbody>
+      </table>
+    </section>
+
+    <section class="kpi-grid">
+      <article class="kpi-card">
+        <span>OC cacheadas</span>
+        <strong id="cacheTotal">0</strong>
+        <small>Total de ordenes guardadas con JSON completo.</small>
+      </article>
+      <article class="kpi-card">
+        <span>Ultima fecha cacheada</span>
+        <strong id="cacheUltimaFecha">-</strong>
+        <small>OC mas nueva disponible en base de datos.</small>
+      </article>
+      <article class="kpi-card">
+        <span>Primera fecha cacheada</span>
+        <strong id="cachePrimeraFecha">-</strong>
+        <small>OC mas antigua disponible en base de datos.</small>
+      </article>
+      <article class="kpi-card">
+        <span>Ultima OC guardada</span>
+        <strong id="cacheUltimaDescarga">-</strong>
+        <small id="cacheUltimaDescargaCodigo">Ultimo documento insertado o actualizado.</small>
+      </article>
+    </section>
+
+    <section class="table-wrapper analytics-table">
+      <div class="analytics-table-heading">
+        <h2>OC en cache</h2>
+        <button id="refreshCacheBtn" class="btn-secondary" type="button">Actualizar cache</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Codigo</th>
+            <th>Proveedor</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Origen</th>
+            <th>Guardada</th>
+          </tr>
+        </thead>
+        <tbody id="cacheTable"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="detailModal" class="modal">
+    <div class="modal-content wide">
+      <span class="close-btn">&times;</span>
+      <h2>Detalle de job</h2>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+</body>
+</html>

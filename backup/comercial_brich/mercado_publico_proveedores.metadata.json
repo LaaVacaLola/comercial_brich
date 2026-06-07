@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"codigoProveedor":{"$numberInt":"1"}},"name":"codigoProveedor_1","background":true,"unique":true}],"uuid":"b503bfbf7d3345d782ce093c447a2f79","collectionName":"mercado_publico_proveedores","type":"collection"}

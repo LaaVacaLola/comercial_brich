@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analitica Mercado Publico</title>
+  <link rel="stylesheet" href="../css/mercado_publico.css">
+  <link rel="stylesheet" href="../css/admin_nav.css">
+  <script src="../libs/chart.umd.min.js"></script>
+  <script defer src="../js/admin_nav.js"></script>
+  <script defer src="../js/mercado_common.js"></script>
+  <script defer src="../js/mercado_reportes.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
+  </header>
+
+  <main class="container">
+    <section class="analytics-hero">
+      <div>
+        <span class="eyebrow">ChileCompra / Mercado Publico</span>
+        <h1>Analitica de ordenes de compra</h1>
+        <p class="subtitle">Selecciona proveedores y clientes observados para analizar sus OC cacheadas por periodo: productos comprados, montos, compradores y estados.</p>
+      </div>
+      <div class="hero-badge">
+        <span>Periodo</span>
+        <strong>Seleccionable</strong>
+      </div>
+    </section>
+
+    <section class="analytics-selectors">
+      <div class="selector-card">
+        <label>Tipo de analisis</label>
+        <div class="segmented-control" id="tipoAnalisisControl">
+          <button class="active" data-modo="proveedores" type="button">Proveedor</button>
+          <button data-modo="clientes" type="button">Cliente</button>
+        </div>
+        <small>Cambia entre analizar ventas de proveedores o compras de clientes.</small>
+      </div>
+      <div class="selector-card">
+        <label for="entidadSelector">Entidad guardada</label>
+        <div class="selector-row">
+          <select id="entidadSelector"></select>
+          <button id="agregarEntidadBtn" class="btn-secondary" type="button">Agregar</button>
+        </div>
+        <small>Agrega una o mas entidades al analisis actual.</small>
+      </div>
+      <div class="selector-card selected-entities-card">
+        <label>Seleccionados</label>
+        <div id="entidadesSeleccionadas" class="selected-entities"></div>
+        <small>Quita elementos para recalcular el analisis.</small>
+      </div>
+      <div class="selector-card compact">
+        <label for="periodoAnalisis">Periodo a analizar</label>
+        <select id="periodoAnalisis">
+          <option value="mes_actual" selected>Mes actual</option>
+          <option value="ultimos_3_meses">Ultimos 3 meses</option>
+          <option value="ultimos_6_meses">Ultimos 6 meses</option>
+          <option value="ultimo_ano">Ultimo ano</option>
+        </select>
+        <small>Filtra las OC cacheadas por fecha de la orden.</small>
+      </div>
+      <div class="selector-card compact">
+        <label>Guardar resultado</label>
+        <button id="guardarAnalisisBtn" class="btn-primary" type="button" disabled>Guardar analisis</button>
+        <small>Disponible despues de generar un resultado.</small>
+      </div>
+    </section>
+
+    <section class="progress-panel" aria-label="Progreso carga analitica">
+      <div class="progress-heading">
+        <strong id="progressPercent">0%</strong>
+        <span id="progressText">Sin proceso activo.</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+      <div class="progress-stats">
+        <span>OC encontradas: <strong id="ocEncontradas">0</strong></span>
+        <span>OC procesadas: <strong id="ocProcesadas">0</strong></span>
+        <span>OC omitidas: <strong id="ocOmitidas">0</strong></span>
+        <span>Consultas omitidas: <strong id="consultasOmitidas">0</strong></span>
+      </div>
+    </section>
+
+    <section class="kpi-grid">
+      <article class="kpi-card">
+        <span>Total OC</span>
+        <strong id="totalOrdenes">0</strong>
+        <small>Ordenes de compra cacheadas dentro del periodo seleccionado.</small>
+      </article>
+      <article class="kpi-card">
+        <span>Monto total</span>
+        <strong id="montoTotal">$0</strong>
+        <small>Total acumulado de las OC encontradas.</small>
+      </article>
+      <article class="kpi-card">
+        <span>Promedio OC</span>
+        <strong id="promedioOrden">$0</strong>
+        <small>Monto promedio por orden de compra.</small>
+      </article>
+      <article class="kpi-card">
+        <span>Seleccionados</span>
+        <strong id="seleccionadosCount">0</strong>
+        <small id="seleccionadosLabel">Entidades usadas para consultar OC.</small>
+      </article>
+    </section>
+
+    <section class="charts-grid">
+      <div class="chart-card chart-card-featured">
+        <h2 id="productosMontoTitle">Productos por monto</h2>
+        <p id="productosMontoDesc">Productos o servicios con mayor monto acumulado dentro de las OC detalladas.</p>
+        <canvas id="productosCompradosChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2 id="productoEntidadTitle">Producto por proveedor</h2>
+        <p id="productoEntidadDesc">Relacion entre productos o servicios y las entidades del analisis.</p>
+        <select id="productoEntidadSelector" class="chart-select"></select>
+        <canvas id="productoEntidadChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2 id="relacionesTitle">Proveedores principales</h2>
+        <p id="relacionesDesc">Proveedores que mas venden a los clientes seleccionados.</p>
+        <canvas id="relacionesChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2>Montos por mes</h2>
+        <p>Evolucion mensual del monto de OC. Se separa en un grafico por cada ano del periodo.</p>
+        <div id="fechasPorAnoCharts" class="year-charts"></div>
+      </div>
+    </section>
+
+    <section class="table-wrapper analytics-table">
+      <div class="analytics-table-heading">
+        <h2>Ordenes de compra analizadas</h2>
+        <div id="ordenesPager" class="table-pager"></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Codigo</th>
+            <th>Proveedor</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="ordenesAnalizadasTable"></tbody>
+      </table>
+    </section>
+
+    <section class="table-wrapper analytics-table">
+      <div class="analytics-table-heading">
+        <h2>Analisis guardados</h2>
+        <div class="table-toolbar">
+          <div id="analisisPager" class="table-pager"></div>
+          <button id="refreshAnalisisBtn" class="btn-secondary" type="button">Actualizar</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>OC</th>
+            <th>Monto total</th>
+            <th>Accion</th>
+          </tr>
+        </thead>
+        <tbody id="analisisGuardadosTable"></tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

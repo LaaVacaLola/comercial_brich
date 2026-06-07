@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"codigoOrganismo":{"$numberInt":"1"}},"name":"codigoOrganismo_1","background":true,"unique":true}],"uuid":"e8eea8a8f2df42d9b85447ac01765749","collectionName":"mercado_publico_clientes","type":"collection"}

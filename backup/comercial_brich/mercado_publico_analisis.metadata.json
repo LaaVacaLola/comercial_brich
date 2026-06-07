@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"modoAnalisis":{"$numberInt":"1"}},"name":"modoAnalisis_1","background":true}],"uuid":"aa07965e580a462eb3e4e231f8a96757","collectionName":"mercado_publico_analisis","type":"collection"}

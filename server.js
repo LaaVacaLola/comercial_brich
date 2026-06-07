@@ -35,7 +35,9 @@ app.use(
       "connect-src": [
         "'self'",
         "http://localhost:3000",
+        // API oficial Mercado Publico / ChileCompra
         "https://api.mercadopublico.cl",
+        "https://www.chilecompra.cl",
       ],
     },
   })
@@ -48,9 +50,6 @@ app.use(morgan("dev"));
 app.use(cors());
 app.use(express.json());
 
-// Conectar a MongoDB
-connectDB();
-
 // Archivos estáticos (frontend)
 app.use(express.static(path.join(__dirname, "web")));
 
@@ -62,6 +61,7 @@ app.use("/api/dashboard", require("./api/routes/dashboard.routes"));
 app.use("/api/usuarios", require("./api/routes/user.routes")); // ✅ ya toma req.body
 app.use("/api/admin", require("./api/routes/admin.routes"));
 app.use("/api/productos", require("./api/routes/producto.routes"));
+app.use("/api/mercado-publico", require("./api/routes/mercadoPublico.routes"));
 
 
 // ===============================
@@ -90,6 +90,12 @@ app.use((err, req, res, next) => {
 // ===============================
 // Iniciar servidor
 // ===============================
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-});
+async function startServer() {
+  await connectDB();
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  });
+}
+
+startServer();

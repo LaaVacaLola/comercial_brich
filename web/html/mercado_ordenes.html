@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ordenes Mercado Publico</title>
+  <link rel="stylesheet" href="../css/mercado_publico.css">
+  <link rel="stylesheet" href="../css/admin_nav.css">
+  <script defer src="../js/admin_nav.js"></script>
+  <script defer src="../js/mercado_common.js"></script>
+  <script defer src="../js/mercado_ordenes.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
+  </header>
+
+  <main class="container">
+    <h1>Ordenes de compra Mercado Publico</h1>
+    <p class="subtitle">Consulta ordenes oficiales de ChileCompra separadas de las ordenes internas.</p>
+
+    <section class="filters">
+      <input type="date" id="fechaDesde" aria-label="Fecha desde">
+      <input type="date" id="fechaHasta" aria-label="Fecha hasta">
+      <select id="estado">
+        <option value="todos">Todos</option>
+        <option value="enviadaproveedor">Enviada proveedor</option>
+        <option value="aceptada">Aceptada</option>
+        <option value="cancelada">Cancelada</option>
+        <option value="recepcionconforme">Recepcion conforme</option>
+        <option value="pendienterecepcion">Pendiente recepcion</option>
+        <option value="recepcionaceptadacialmente">Recepcion parcial</option>
+        <option value="recepecionconformeincompleta">Recepcion incompleta</option>
+      </select>
+      <input type="text" id="codigo" placeholder="Codigo orden">
+      <input type="text" id="codigoOrganismo" placeholder="Codigo organismo">
+      <input type="text" id="codigoProveedor" placeholder="Codigo proveedor">
+      <button id="buscarBtn" class="btn-primary">Buscar</button>
+      <button id="limpiarBtn" class="btn-secondary" type="button">Limpiar</button>
+    </section>
+
+    <section class="helper-panel">
+      <input type="text" id="rutProveedor" placeholder="RUT proveedor: 76.123.456-7">
+      <button id="buscarProveedorBtn" class="btn-secondary" type="button">Buscar codigo proveedor</button>
+      <span id="proveedorResult"></span>
+    </section>
+
+    <p id="statusMessage" class="status-message">Selecciona filtros y presiona Buscar.</p>
+
+    <section class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Codigo</th>
+            <th>Nombre</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="resultTable"></tbody>
+      </table>
+    </section>
+
+    <section class="pagination-bar" aria-label="Paginacion ordenes">
+      <button id="prevPageBtn" class="btn-secondary" type="button">Anterior</button>
+      <div id="pageButtons" class="page-buttons"></div>
+      <button id="nextPageBtn" class="btn-secondary" type="button">Siguiente</button>
+      <span id="pageInfo" class="page-info">Pagina 0 de 0</span>
+    </section>
+  </main>
+
+  <div id="detailModal" class="modal">
+    <div class="modal-content wide">
+      <span class="close-btn">&times;</span>
+      <h2>Detalle de orden</h2>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+</body>
+</html>
