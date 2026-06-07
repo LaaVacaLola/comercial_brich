@@ -33,6 +33,10 @@
       <button id="btnAgregarProducto" class="btn-primary">
         📦 + Agregar Producto
       </button>
+
+      <button id="btnNormalizarPrecios" class="btn-secondary" type="button">
+        Normalizar precios
+      </button>
     </section>
 
     <!-- TABLA REAL -->
@@ -64,8 +68,11 @@
       <h2>Crear Oferta para <span id="productoNombre"></span></h2>
 
       <form id="ofertaForm">
+        <label>Porcentaje de descuento</label>
+        <input id="ofertaPorcentaje" type="number" min="0" max="100" step="0.01" placeholder="Ej: 15">
+
         <label>Monto de oferta</label>
-        <input id="ofertaMonto" type="number" required>
+        <input id="ofertaMonto" type="number" min="0" step="1" placeholder="Ej: 5000">
 
         <label>Fecha inicio</label>
         <input id="ofertaInicio" type="date" required>
@@ -75,6 +82,28 @@
 
         <button type="submit" class="btn-confirm">💾 Guardar Oferta</button>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL NORMALIZAR PRECIOS -->
+  <div id="normalizarPreciosModal" class="modal">
+    <div class="modal-content">
+      <span id="closeNormalizarPreciosModal" class="close">&times;</span>
+
+      <h2>Normalizar precios</h2>
+
+      <p class="modal-info">
+        Este proceso revisa todos los productos y convierte el campo precio a numero entero.
+        Soporta valores con coma o punto decimal y redondea al entero mas cercano.
+      </p>
+
+      <div id="normalizarPreciosResultado" class="process-result">
+        Todavia no se ha ejecutado el proceso.
+      </div>
+
+      <button id="confirmNormalizarPrecios" type="button" class="btn-confirm">
+        Ejecutar normalizacion
+      </button>
     </div>
   </div>
 

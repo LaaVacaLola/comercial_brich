@@ -165,8 +165,27 @@ tbody tr:nth-child(even) {
   width: 90%;
   max-width: 420px;
   text-align: center;
+  position: relative;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
   animation: scaleUp 0.35s ease;
+}
+
+.modal-info {
+  color: #555;
+  line-height: 1.45;
+  margin: 0 0 1rem;
+  text-align: left;
+}
+
+.process-result {
+  background: #f5f8fc;
+  border: 1px solid #d8e2ef;
+  border-radius: 8px;
+  color: #333;
+  line-height: 1.55;
+  margin-top: 1rem;
+  padding: 12px;
+  text-align: left;
 }
 
 .modal-content h2 {
@@ -328,7 +347,8 @@ tbody tr:nth-child(even) {
 
   .catalogo-filtros select,
   .catalogo-filtros input,
-  .catalogo-filtros .btn-primary {
+  .catalogo-filtros .btn-primary,
+  .catalogo-filtros .btn-secondary {
     width: 100%;
   }
 }

@@ -18,12 +18,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabla = document.getElementById("tablaProductos");
   const selectCatalogo = document.getElementById("selectCatalogo");
   const btnAgregarProducto = document.getElementById("btnAgregarProducto");
+  const btnNormalizarPrecios = document.getElementById("btnNormalizarPrecios");
 
   const modal = document.getElementById("ofertaModal");
   const closeModal = document.getElementById("closeModal");
   const productoNombre = document.getElementById("productoNombre");
+  const ofertaForm = document.getElementById("ofertaForm");
+  const ofertaPorcentaje = document.getElementById("ofertaPorcentaje");
+  const ofertaMonto = document.getElementById("ofertaMonto");
+  const ofertaInicio = document.getElementById("ofertaInicio");
+  const ofertaFin = document.getElementById("ofertaFin");
+  const normalizarPreciosModal = document.getElementById("normalizarPreciosModal");
+  const closeNormalizarPreciosModal = document.getElementById("closeNormalizarPreciosModal");
+  const confirmNormalizarPrecios = document.getElementById("confirmNormalizarPrecios");
+  const normalizarPreciosResultado = document.getElementById("normalizarPreciosResultado");
 
   let productoOfertaID = null;
+  let productoOfertaPrecio = 0;
 
   // ============================================
   // 2) Cargar productos desde el backend
@@ -119,7 +130,8 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
           <button class="btn-secondary btn-oferta" 
                   data-id="${p._id}" 
-                  data-nombre="${p.nombre}">
+                  data-nombre="${p.nombre}"
+                  data-precio="${p.precio}">
             + Oferta
           </button>
         </td>
@@ -171,7 +183,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // ABRIR MODAL OFERTA
     if (e.target.classList.contains("btn-oferta")) {
       productoOfertaID = id;
+      productoOfertaPrecio = Number(e.target.dataset.precio || 0);
       productoNombre.textContent = e.target.dataset.nombre;
+      ofertaForm.reset();
       modal.style.display = "flex";
     }
   });
@@ -218,7 +232,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ============================================
-  // 7) Modal Oferta (solo visual por ahora)
+  // 7) Modal Oferta
   // ============================================
   closeModal.addEventListener("click", () => {
     modal.style.display = "none";
@@ -226,16 +240,125 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.addEventListener("click", (e) => {
     if (e.target === modal) modal.style.display = "none";
+    if (e.target === normalizarPreciosModal) normalizarPreciosModal.style.display = "none";
   });
 
-  document.getElementById("ofertaForm").addEventListener("submit", (e) => {
+  function calcularMontoDesdePorcentaje() {
+    const porcentaje = Number(ofertaPorcentaje.value);
+    if (!Number.isFinite(porcentaje) || porcentaje < 0 || !productoOfertaPrecio) return;
+    ofertaMonto.value = Math.round((productoOfertaPrecio * porcentaje) / 100);
+  }
+
+  function calcularPorcentajeDesdeMonto() {
+    const monto = Number(ofertaMonto.value);
+    if (!Number.isFinite(monto) || monto < 0 || !productoOfertaPrecio) return;
+    ofertaPorcentaje.value = ((monto / productoOfertaPrecio) * 100).toFixed(2);
+  }
+
+  ofertaPorcentaje.addEventListener("input", calcularMontoDesdePorcentaje);
+  ofertaMonto.addEventListener("input", calcularPorcentajeDesdeMonto);
+
+  ofertaForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (!productoOfertaID) return;
+
+    if (!ofertaPorcentaje.value && !ofertaMonto.value) {
+      alert("Ingresa porcentaje o monto de descuento");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/${productoOfertaID}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({
+          oferta: {
+            fecha_inicio: ofertaInicio.value,
+            fecha_termino: ofertaFin.value,
+            porcentaje_descuento: ofertaPorcentaje.value,
+            monto_descuento: ofertaMonto.value
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert("Error al guardar oferta: " + (err.details || err.error || "HTTP " + res.status));
+        return;
+      }
+
+      alert("Oferta guardada correctamente");
+      modal.style.display = "none";
+      cargarProductos();
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar oferta");
+    }
+
+    return;
     alert("✨ Oferta guardada (lógica a BD la hacemos después)");
     modal.style.display = "none";
   });
 
   // ============================================
-  // 8) Cargar datos al iniciar
+  // 8) Normalizar precios
+  // ============================================
+  btnNormalizarPrecios.addEventListener("click", () => {
+    normalizarPreciosResultado.textContent = "Todavia no se ha ejecutado el proceso.";
+    confirmNormalizarPrecios.disabled = false;
+    confirmNormalizarPrecios.textContent = "Ejecutar normalizacion";
+    normalizarPreciosModal.style.display = "flex";
+  });
+
+  closeNormalizarPreciosModal.addEventListener("click", () => {
+    normalizarPreciosModal.style.display = "none";
+  });
+
+  confirmNormalizarPrecios.addEventListener("click", async () => {
+    confirmNormalizarPrecios.disabled = true;
+    confirmNormalizarPrecios.textContent = "Procesando...";
+    normalizarPreciosResultado.textContent = "Normalizando precios, espera un momento...";
+
+    try {
+      const res = await fetch(`${API}/precios/normalizar`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        }
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        normalizarPreciosResultado.textContent = data.details || data.error || `Error HTTP ${res.status}`;
+        confirmNormalizarPrecios.disabled = false;
+        confirmNormalizarPrecios.textContent = "Reintentar";
+        return;
+      }
+
+      normalizarPreciosResultado.innerHTML = `
+        <strong>Proceso completado.</strong><br>
+        Productos revisados: ${data.total}<br>
+        Productos actualizados: ${data.actualizados}<br>
+        Sin cambios: ${data.sinCambios}<br>
+        Omitidos por precio invalido: ${data.omitidos}
+      `;
+      confirmNormalizarPrecios.textContent = "Proceso ejecutado";
+      cargarProductos();
+    } catch (err) {
+      console.error(err);
+      normalizarPreciosResultado.textContent = "Error de conexion al normalizar precios";
+      confirmNormalizarPrecios.disabled = false;
+      confirmNormalizarPrecios.textContent = "Reintentar";
+    }
+  });
+
+  // ============================================
+  // 9) Cargar datos al iniciar
   // ============================================
   cargarProductos();
 });
