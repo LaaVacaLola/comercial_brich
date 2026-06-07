@@ -368,3 +368,113 @@ tbody tr:nth-child(even) {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   padding: 5px;
 }
+
+/* Tailwind-powered refresh for catalogo_admin.html */
+body {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.container {
+  text-align: left;
+}
+
+.container h1 {
+  color: #0f172a;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: #64748b;
+  margin-bottom: 1.5rem;
+}
+
+.catalogo-filtros {
+  justify-content: flex-start;
+  border-radius: 8px;
+}
+
+.catalogo-filtros select,
+.catalogo-filtros input,
+.modal-content input {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.catalogo-filtros select:focus,
+.catalogo-filtros input:focus,
+.modal-content input:focus,
+.precio-input:focus,
+.select-activo:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.table-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+table th,
+table td {
+  text-align: left;
+  vertical-align: middle;
+}
+
+thead {
+  background: #0f172a;
+}
+
+tbody tr {
+  transition: background 0.15s ease;
+}
+
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+.status {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 7px 10px;
+}
+
+.status.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status.danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-warning,
+.btn-confirm {
+  border-radius: 6px;
+  transform: none;
+}
+
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-warning:hover,
+.btn-confirm:hover {
+  transform: none;
+}
+
+.modal-content {
+  border-radius: 8px;
+  max-width: 460px;
+}
+
+.process-result {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}

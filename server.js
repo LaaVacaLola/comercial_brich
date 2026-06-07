@@ -28,7 +28,7 @@ app.use(
     directives: {
       "default-src": ["'self'"],
       "script-src": ["'self'", "https://cdn.jsdelivr.net"], // Chart.js
-      "style-src": ["'self'", "https://fonts.googleapis.com"], // estilos
+      "style-src": ["'self'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"], // estilos
       "font-src": ["'self'", "https://fonts.gstatic.com"], // fuentes
       "img-src": ["'self'", "data:", "https:"], // imágenes locales/externas
 

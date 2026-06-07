@@ -93,6 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     lista.forEach(p => {
       const tr = document.createElement("tr");
+      tr.className = "hover:bg-gray-50 transition";
 
       tr.innerHTML = `
         <td>${p.id_padre || "-"}</td>
@@ -107,11 +108,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${p.nombre}</td>
 
         <td>
-          <input class="precio-input" type="number" value="${p.precio}">
+          <input class="precio-input w-28 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100" type="number" value="${p.precio}">
         </td>
 
         <td>
-          <select class="select-activo">
+          <select class="select-activo rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100">
             <option value="activo"   ${p.estado === "activo"   ? "selected" : ""}>Sí</option>
             <option value="inactivo" ${p.estado === "inactivo" ? "selected" : ""}>No</option>
           </select>
@@ -124,11 +125,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
 
         <td>
-          <button class="btn-warning btn-guardar" 
+          <button class="btn-warning btn-guardar rounded-md bg-amber-500 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600" 
                   data-id="${p._id}">
             💾 Guardar
           </button>
-          <button class="btn-secondary btn-oferta" 
+          <button class="btn-secondary btn-oferta rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800" 
                   data-id="${p._id}" 
                   data-nombre="${p.nombre}"
                   data-precio="${p.precio}">

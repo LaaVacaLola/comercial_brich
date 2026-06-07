@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Catálogo de Productos (Admin)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
   <link rel="stylesheet" href="../css/catalogo_admin.css">
   <link rel="stylesheet" href="../css/admin_nav.css">
   <script defer src="../js/admin_nav.js"></script>
   <script defer src="../js/catalogo_admin.js"></script>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800">
 
   <!-- 🔹 Navbar -->
   <header class="navbar">
@@ -20,43 +21,45 @@
     <a href="dashboard_admin.html" class="btn-back">⬅ Volver al Dashboard</a>
   </header>
 
-  <main class="container">
+  <main class="container mx-auto max-w-7xl px-4 py-8 text-left sm:px-6 lg:px-8">
     <h1>📦 Catálogo de Productos (Administrador)</h1>
     <p class="subtitle">Gestiona productos, activa/desactiva y crea ofertas</p>
 
     <!-- FILTROS Y AGREGAR -->
-    <section class="catalogo-filtros">
-      <select id="selectCatalogo" class="select-catalogo">
+    <section class="catalogo-filtros rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <select id="selectCatalogo" class="select-catalogo rounded-md border-gray-300 bg-white px-4 py-3 text-sm shadow-sm focus:border-blue-600 focus:ring-blue-600">
         <option value="">Seleccionar producto del catálogo...</option>
       </select>
 
-      <button id="btnAgregarProducto" class="btn-primary">
+      <button id="btnAgregarProducto" class="btn-primary inline-flex items-center justify-center rounded-md bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800">
         📦 + Agregar Producto
       </button>
 
-      <button id="btnNormalizarPrecios" class="btn-secondary" type="button">
+      <button id="btnNormalizarPrecios" class="btn-secondary inline-flex items-center justify-center rounded-md bg-gray-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800" type="button">
         Normalizar precios
       </button>
     </section>
 
     <!-- TABLA REAL -->
-    <section class="table-wrapper">
-      <table>
-        <thead>
+    <section class="table-wrapper overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-900 text-white">
           <tr>
-            <th>ID</th>
-            <th>Imagen</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">ID</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Imagen</th>
             <th>Región</th>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Activo</th>
-            <th>Aprobado</th>
-            <th>Acciones</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Nombre</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Precio</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Activo</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Aprobado</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Acciones</th>
           </tr>
         </thead>
 
-        <tbody id="tablaProductos"></tbody>
+        <tbody id="tablaProductos" class="divide-y divide-gray-100 bg-white"></tbody>
       </table>
+      </div>
     </section>
   </main>
 
