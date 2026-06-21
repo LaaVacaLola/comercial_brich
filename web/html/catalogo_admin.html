@@ -3,78 +3,170 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Catálogo de Productos (Admin)</title>
+  <title>Catalogo de Productos (Admin)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
   <link rel="stylesheet" href="../css/catalogo_admin.css">
   <link rel="stylesheet" href="../css/admin_nav.css">
   <script defer src="../js/admin_nav.js"></script>
   <script defer src="../js/catalogo_admin.js"></script>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800">
 
-  <!-- 🔹 Navbar -->
   <header class="navbar">
     <div class="logo">
       <img src="../img/logo.png" alt="Logo Comercial Brich">
       <span>Comercial Brich</span>
     </div>
-    <a href="dashboard_admin.html" class="btn-back">⬅ Volver al Dashboard</a>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
   </header>
 
-  <main class="container">
-    <h1>📦 Catálogo de Productos (Administrador)</h1>
-    <p class="subtitle">Gestiona productos, activa/desactiva y crea ofertas</p>
+  <main class="container mx-auto max-w-7xl px-4 py-8 text-left sm:px-6 lg:px-8">
+    <h1>Catalogo de Productos (Administrador)</h1>
+    <p class="subtitle">Gestiona productos, disponibilidad, aprobacion y ofertas.</p>
 
-    <!-- FILTROS Y AGREGAR -->
-    <section class="catalogo-filtros">
-      <select id="selectCatalogo" class="select-catalogo">
-        <option value="">Seleccionar producto del catálogo...</option>
-      </select>
+    <section class="catalogo-filtros rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <input id="filtroProductos" type="search" placeholder="Buscar por nombre, SKU o categoria" class="select-catalogo rounded-md border-gray-300 bg-white px-4 py-3 text-sm shadow-sm focus:border-blue-600 focus:ring-blue-600">
 
-      <button id="btnAgregarProducto" class="btn-primary">
-        📦 + Agregar Producto
+      <button id="btnAgregarProducto" class="btn-primary inline-flex items-center justify-center rounded-md bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800" type="button">
+        Nuevo producto
+      </button>
+
+      <button id="btnNormalizarPrecios" class="btn-secondary inline-flex items-center justify-center rounded-md bg-gray-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800" type="button">
+        Normalizar precios
       </button>
     </section>
 
-    <!-- TABLA REAL -->
-    <section class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Imagen</th>
-            <th>Región</th>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Activo</th>
-            <th>Aprobado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+    <div id="catalogoEstado" class="catalogo-estado" role="status"></div>
 
-        <tbody id="tablaProductos"></tbody>
-      </table>
+    <section class="table-wrapper overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-900 text-white">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">SKU</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Imagen</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Nombre</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Categoria</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Region</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Precio</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Activo</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Aprobado</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody id="tablaProductos" class="divide-y divide-gray-100 bg-white"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 
-  <!-- MODAL OFERTA -->
+  <div id="productoModal" class="modal">
+    <div class="modal-content modal-content-wide">
+      <button id="closeProductoModal" class="close" type="button" aria-label="Cerrar">&times;</button>
+
+      <h2 id="productoModalTitle">Nuevo producto</h2>
+
+      <form id="productoForm" class="producto-form">
+        <input id="productoId" type="hidden">
+
+        <label>SKU</label>
+        <input id="productoSku" type="text" placeholder="Se genera automaticamente" disabled>
+
+        <label>Nombre</label>
+        <input id="productoNombreInput" type="text" required maxlength="160">
+
+        <label>Descripcion</label>
+        <textarea id="productoDescripcion" rows="3" maxlength="1000"></textarea>
+
+        <div class="form-grid">
+          <div>
+            <label>Precio</label>
+            <input id="productoPrecio" type="number" min="0" step="1" required>
+          </div>
+
+          <div>
+            <label>Unidad</label>
+            <input id="productoUnidad" type="text" maxlength="40" placeholder="Unidad, caja, pack">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label>Categoria</label>
+            <input id="productoCategoria" type="text" maxlength="80">
+          </div>
+
+          <div>
+            <label>Region</label>
+            <input id="productoRegion" type="text" maxlength="80">
+          </div>
+        </div>
+
+        <label>URL de imagen</label>
+        <input id="productoImagen" type="url" placeholder="https://...">
+
+        <div class="form-grid">
+          <label class="check-row">
+            <input id="productoActivo" type="checkbox" checked>
+            <span>Activo</span>
+          </label>
+
+          <label class="check-row">
+            <input id="productoAprobado" type="checkbox">
+            <span>Aprobado para cliente</span>
+          </label>
+        </div>
+
+        <div id="productoFormEstado" class="form-status"></div>
+
+        <button id="productoSubmit" type="submit" class="btn-confirm">Guardar producto</button>
+      </form>
+    </div>
+  </div>
+
   <div id="ofertaModal" class="modal">
     <div class="modal-content">
-      <span id="closeModal" class="close">&times;</span>
+      <button id="closeModal" class="close" type="button" aria-label="Cerrar">&times;</button>
 
-      <h2>Crear Oferta para <span id="productoNombre"></span></h2>
+      <h2>Crear oferta para <span id="productoNombre"></span></h2>
 
       <form id="ofertaForm">
+        <label>Porcentaje de descuento</label>
+        <input id="ofertaPorcentaje" type="number" min="0" max="100" step="0.01" placeholder="Ej: 15">
+
         <label>Monto de oferta</label>
-        <input id="ofertaMonto" type="number" required>
+        <input id="ofertaMonto" type="number" min="0" step="1" placeholder="Ej: 5000">
 
         <label>Fecha inicio</label>
         <input id="ofertaInicio" type="date" required>
 
-        <label>Fecha término</label>
+        <label>Fecha termino</label>
         <input id="ofertaFin" type="date" required>
 
-        <button type="submit" class="btn-confirm">💾 Guardar Oferta</button>
+        <button type="submit" class="btn-confirm">Guardar oferta</button>
       </form>
+    </div>
+  </div>
+
+  <div id="normalizarPreciosModal" class="modal">
+    <div class="modal-content">
+      <button id="closeNormalizarPreciosModal" class="close" type="button" aria-label="Cerrar">&times;</button>
+
+      <h2>Normalizar precios</h2>
+
+      <p class="modal-info">
+        Este proceso revisa todos los productos y convierte el campo precio a numero entero.
+        Soporta valores con coma o punto decimal y redondea al entero mas cercano.
+      </p>
+
+      <div id="normalizarPreciosResultado" class="process-result">
+        Todavia no se ha ejecutado el proceso.
+      </div>
+
+      <button id="confirmNormalizarPrecios" type="button" class="btn-confirm">
+        Ejecutar normalizacion
+      </button>
     </div>
   </div>
 

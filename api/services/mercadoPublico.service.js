@@ -42,7 +42,7 @@ const downloadJobQueue = [];
 let downloadJobActive = false;
 const ocProcessingQueue = [];
 let ocProcessingActiveCount = 0;
-const OC_PROCESSING_WORKERS = 2;
+const OC_PROCESSING_WORKERS = 1;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

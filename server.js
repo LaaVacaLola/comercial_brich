@@ -28,7 +28,7 @@ app.use(
     directives: {
       "default-src": ["'self'"],
       "script-src": ["'self'", "https://cdn.jsdelivr.net"], // Chart.js
-      "style-src": ["'self'", "https://fonts.googleapis.com"], // estilos
+      "style-src": ["'self'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"], // estilos
       "font-src": ["'self'", "https://fonts.gstatic.com"], // fuentes
       "img-src": ["'self'", "data:", "https:"], // imágenes locales/externas
 
@@ -61,6 +61,7 @@ app.use("/api/dashboard", require("./api/routes/dashboard.routes"));
 app.use("/api/usuarios", require("./api/routes/user.routes")); // ✅ ya toma req.body
 app.use("/api/admin", require("./api/routes/admin.routes"));
 app.use("/api/productos", require("./api/routes/producto.routes"));
+app.use("/api/solicitudes-compra", require("./api/routes/solicitudCompra.routes"));
 app.use("/api/mercado-publico", require("./api/routes/mercadoPublico.routes"));
 
 

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitudes de Compra</title>
+  <link rel="stylesheet" href="../css/admin_nav.css">
+  <link rel="stylesheet" href="../css/solicitudes_compra.css">
+  <script defer src="../js/admin_nav.js"></script>
+  <script defer src="../js/solicitudes_compra.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
+  </header>
+
+  <main class="page-shell">
+    <section class="page-header">
+      <div>
+        <h1>Solicitudes de compra</h1>
+        <p>Cotizaciones internas para presentar a clientes.</p>
+      </div>
+      <button id="btnNuevaSolicitud" type="button" class="btn-primary">Nueva cotizacion</button>
+    </section>
+
+    <section class="workspace">
+      <aside class="panel list-panel">
+        <div class="panel-header">
+          <h2>Cotizaciones</h2>
+          <button id="btnRecargar" type="button" class="btn-icon" title="Recargar">R</button>
+        </div>
+        <input id="buscarSolicitud" type="search" placeholder="Buscar folio o cliente">
+        <select id="filtroEstado">
+          <option value="">Todos los estados</option>
+          <option value="borrador">Borrador</option>
+          <option value="enviada">Enviada</option>
+          <option value="aceptada">Aceptada</option>
+          <option value="rechazada">Rechazada</option>
+          <option value="vencida">Vencida</option>
+        </select>
+        <div id="solicitudesList" class="solicitudes-list"></div>
+      </aside>
+
+      <section class="editor">
+        <form id="solicitudForm" class="panel form-panel">
+          <div class="panel-header">
+            <div>
+              <h2 id="formTitle">Nueva cotizacion</h2>
+              <p id="folioLabel">Folio pendiente</p>
+            </div>
+            <span id="estadoBadge" class="badge">Borrador</span>
+          </div>
+
+          <input id="solicitudId" type="hidden">
+
+          <div class="form-grid">
+            <label>Razon social<input id="clienteRazonSocial" type="text" required></label>
+            <label>RUT<input id="clienteRut" type="text" required></label>
+            <label>Email<input id="clienteEmail" type="email" required></label>
+            <label>Telefono<input id="clienteTelefono" type="text" required></label>
+            <label>Nombre de contacto<input id="clienteContacto" type="text" required></label>
+            <label>Validez dias<input id="validezDias" type="number" min="1" step="1" value="15" required></label>
+          </div>
+
+          <label>Direccion<input id="clienteDireccion" type="text" required></label>
+          <label>Observaciones<textarea id="observaciones" rows="3"></textarea></label>
+
+          <div id="formStatus" class="status-line"></div>
+
+          <div class="actions-row">
+            <button id="btnGuardarSolicitud" type="submit" class="btn-primary">Guardar cotizacion</button>
+            <button id="btnEnviarSolicitud" type="button" class="btn-secondary">Marcar enviada</button>
+            <button id="btnAceptarSolicitud" type="button" class="btn-secondary">Aceptar</button>
+            <button id="btnRechazarSolicitud" type="button" class="btn-secondary">Rechazar</button>
+            <button id="btnVencerSolicitud" type="button" class="btn-secondary">Vencer</button>
+            <button id="btnImprimirSolicitud" type="button" class="btn-secondary">Imprimir</button>
+          </div>
+        </form>
+
+        <section class="panel items-panel">
+          <div class="panel-header">
+            <h2>Items</h2>
+          </div>
+
+          <div class="item-add">
+            <input id="buscarProducto" type="search" placeholder="Buscar producto por SKU, nombre o categoria">
+            <select id="productoSelect">
+              <option value="">Seleccionar producto</option>
+            </select>
+            <input id="itemCantidad" type="number" min="1" step="1" value="1" aria-label="Cantidad">
+            <button id="btnAgregarItem" type="button" class="btn-secondary">Agregar</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Producto</th>
+                  <th>Precio neto</th>
+                  <th>Cantidad</th>
+                  <th>Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="itemsTable"></tbody>
+            </table>
+          </div>
+
+          <div class="totals">
+            <div><span>Neto</span><strong id="totalNeto">$0</strong></div>
+            <div><span>IVA 19%</span><strong id="totalIva">$0</strong></div>
+            <div><span>Total</span><strong id="totalGeneral">$0</strong></div>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <section id="printArea" class="print-area"></section>
+</body>
+</html>

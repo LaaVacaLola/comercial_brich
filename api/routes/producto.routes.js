@@ -5,6 +5,7 @@ const {
   getProductos,
   getProductoById,
   createProducto,
+  normalizarPreciosProductos,
   updateProducto,
   deleteProducto
 } = require("../controllers/producto.controller");
@@ -19,7 +20,9 @@ router.get("/:id", getProductoById);  // SIN AUTH
 // RUTAS SOLO ADMIN
 // ==============================
 router.post("/", auth, adminAuth, createProducto);
+router.put("/precios/normalizar", auth, adminAuth, normalizarPreciosProductos);
 router.put("/:id", auth, adminAuth, updateProducto);
+router.patch("/:id", auth, adminAuth, updateProducto);
 router.delete("/:id", auth, adminAuth, deleteProducto);
 
 module.exports = router;
