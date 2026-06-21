@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const solicitudesList = document.getElementById("solicitudesList");
   const buscarSolicitud = document.getElementById("buscarSolicitud");
+  const filtroEstado = document.getElementById("filtroEstado");
   const btnRecargar = document.getElementById("btnRecargar");
   const btnNuevaSolicitud = document.getElementById("btnNuevaSolicitud");
   const solicitudForm = document.getElementById("solicitudForm");
@@ -26,6 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const formStatus = document.getElementById("formStatus");
   const btnGuardarSolicitud = document.getElementById("btnGuardarSolicitud");
   const btnEnviarSolicitud = document.getElementById("btnEnviarSolicitud");
+  const btnAceptarSolicitud = document.getElementById("btnAceptarSolicitud");
+  const btnRechazarSolicitud = document.getElementById("btnRechazarSolicitud");
+  const btnVencerSolicitud = document.getElementById("btnVencerSolicitud");
+  const btnImprimirSolicitud = document.getElementById("btnImprimirSolicitud");
 
   const clienteRazonSocial = document.getElementById("clienteRazonSocial");
   const clienteRut = document.getElementById("clienteRut");
@@ -36,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const validezDias = document.getElementById("validezDias");
   const observaciones = document.getElementById("observaciones");
 
+  const buscarProducto = document.getElementById("buscarProducto");
   const productoSelect = document.getElementById("productoSelect");
   const itemCantidad = document.getElementById("itemCantidad");
   const btnAgregarItem = document.getElementById("btnAgregarItem");
@@ -43,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const totalNeto = document.getElementById("totalNeto");
   const totalIva = document.getElementById("totalIva");
   const totalGeneral = document.getElementById("totalGeneral");
+  const printArea = document.getElementById("printArea");
 
   let solicitudes = [];
   let productos = [];
@@ -111,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setEstadoBadge("borrador");
     setStatus("");
     renderItems();
+    renderPrintArea();
     marcarSolicitudActiva();
   }
 
@@ -136,18 +144,22 @@ document.addEventListener("DOMContentLoaded", () => {
     observaciones.value = solicitud.observaciones || "";
     setStatus("");
     renderItems();
+    renderPrintArea();
     marcarSolicitudActiva();
   }
 
   function renderSolicitudes() {
     const texto = buscarSolicitud.value.trim().toLowerCase();
+    const estadoFiltro = filtroEstado.value;
     const lista = solicitudes.filter((sol) => {
-      return [
+      const coincideTexto = [
         sol.folio,
         sol.cliente?.razonSocial,
         sol.cliente?.rut,
         sol.estado,
       ].some((value) => String(value || "").toLowerCase().includes(texto));
+      const coincideEstado = !estadoFiltro || sol.estado === estadoFiltro;
+      return coincideTexto && coincideEstado;
     });
 
     solicitudesList.innerHTML = "";
@@ -180,7 +192,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderProductos() {
-    const disponibles = productos.filter((p) => productoActivo(p));
+    const texto = buscarProducto.value.trim().toLowerCase();
+    const disponibles = productos.filter((p) => {
+      if (!productoActivo(p)) return false;
+      if (!texto) return true;
+      return [
+        p.sku,
+        p.nombre,
+        p.categoria,
+        p.region,
+      ].some((value) => String(value || "").toLowerCase().includes(texto));
+    });
     productoSelect.innerHTML = `<option value="">Seleccionar producto</option>`;
 
     disponibles.forEach((p) => {
@@ -226,11 +248,94 @@ document.addEventListener("DOMContentLoaded", () => {
     totalGeneral.textContent = money(solicitudActual?.total ?? neto + iva);
 
     const editable = !solicitudActual || ["borrador", "enviada"].includes(solicitudActual.estado);
+    const enviada = solicitudActual?.estado === "enviada";
     btnAgregarItem.disabled = !solicitudActual || !editable;
     productoSelect.disabled = !solicitudActual || !editable;
+    buscarProducto.disabled = !solicitudActual || !editable;
     itemCantidad.disabled = !solicitudActual || !editable;
     btnEnviarSolicitud.disabled = !solicitudActual || solicitudActual.estado !== "borrador";
+    btnAceptarSolicitud.disabled = !enviada;
+    btnRechazarSolicitud.disabled = !enviada;
+    btnVencerSolicitud.disabled = !solicitudActual || !["borrador", "enviada"].includes(solicitudActual.estado);
+    btnImprimirSolicitud.disabled = !solicitudActual;
     btnGuardarSolicitud.disabled = Boolean(solicitudActual && !editable);
+  }
+
+  function fechaTexto(value) {
+    const fecha = value ? new Date(value) : new Date();
+    if (Number.isNaN(fecha.getTime())) return "";
+    return fecha.toLocaleDateString("es-CL");
+  }
+
+  function renderPrintArea() {
+    if (!solicitudActual) {
+      printArea.innerHTML = "";
+      return;
+    }
+
+    const items = solicitudActual.items || [];
+    const rows = items.length > 0
+      ? items.map((item) => `
+          <tr>
+            <td>${escapeHtml(item.sku)}</td>
+            <td>${escapeHtml(item.nombre)}</td>
+            <td>${money(item.precioUnitario)}</td>
+            <td>${item.cantidad}</td>
+            <td>${money(item.subtotal)}</td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="5">Sin items.</td></tr>`;
+
+    printArea.innerHTML = `
+      <div class="print-document">
+        <header class="print-header">
+          <div>
+            <h1>Comercial Brich</h1>
+            <p>Cotizacion ${escapeHtml(solicitudActual.folio || "")}</p>
+          </div>
+          <div>
+            <strong>Fecha</strong>
+            <span>${fechaTexto(solicitudActual.fecha || solicitudActual.createdAt)}</span>
+          </div>
+        </header>
+
+        <section class="print-client">
+          <h2>Cliente</h2>
+          <div class="print-grid">
+            <p><strong>Razon social:</strong> ${escapeHtml(solicitudActual.cliente?.razonSocial || "")}</p>
+            <p><strong>RUT:</strong> ${escapeHtml(solicitudActual.cliente?.rut || "")}</p>
+            <p><strong>Email:</strong> ${escapeHtml(solicitudActual.cliente?.email || "")}</p>
+            <p><strong>Telefono:</strong> ${escapeHtml(solicitudActual.cliente?.telefono || "")}</p>
+            <p><strong>Contacto:</strong> ${escapeHtml(solicitudActual.cliente?.nombreContacto || "")}</p>
+            <p><strong>Direccion:</strong> ${escapeHtml(solicitudActual.cliente?.direccion || "")}</p>
+          </div>
+        </section>
+
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Producto</th>
+              <th>Precio neto</th>
+              <th>Cantidad</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+        <section class="print-totals">
+          <p><span>Neto</span><strong>${money(solicitudActual.neto)}</strong></p>
+          <p><span>IVA 19%</span><strong>${money(solicitudActual.iva)}</strong></p>
+          <p><span>Total</span><strong>${money(solicitudActual.total)}</strong></p>
+        </section>
+
+        <section class="print-notes">
+          <p><strong>Validez:</strong> ${solicitudActual.validezDias || 15} dias</p>
+          <p><strong>Observaciones:</strong> ${escapeHtml(solicitudActual.observaciones || "")}</p>
+        </section>
+      </div>
+    `;
   }
 
   async function cargarSolicitudes() {
@@ -328,24 +433,39 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   btnEnviarSolicitud.addEventListener("click", async () => {
+    cambiarEstado("enviada");
+  });
+
+  btnAceptarSolicitud.addEventListener("click", () => cambiarEstado("aceptada"));
+  btnRechazarSolicitud.addEventListener("click", () => cambiarEstado("rechazada"));
+  btnVencerSolicitud.addEventListener("click", () => cambiarEstado("vencida"));
+  btnImprimirSolicitud.addEventListener("click", () => {
+    if (!solicitudActual) return;
+    renderPrintArea();
+    window.print();
+  });
+
+  async function cambiarEstado(estado) {
     if (!solicitudActual) return;
 
     try {
       const solicitud = await requestJson(`${API_SOL}/${solicitudActual._id}/estado`, {
         method: "PATCH",
-        body: JSON.stringify({ estado: "enviada" }),
+        body: JSON.stringify({ estado }),
       });
-      setStatus("Cotizacion marcada como enviada.", "success");
+      setStatus(`Cotizacion marcada como ${estado}.`, "success");
       poblarFormulario(solicitud);
       await cargarSolicitudes();
     } catch (err) {
       setStatus(err.message, "error");
     }
-  });
+  }
 
   btnNuevaSolicitud.addEventListener("click", limpiarFormulario);
   btnRecargar.addEventListener("click", cargarSolicitudes);
   buscarSolicitud.addEventListener("input", renderSolicitudes);
+  filtroEstado.addEventListener("change", renderSolicitudes);
+  buscarProducto.addEventListener("input", renderProductos);
 
   async function init() {
     try {

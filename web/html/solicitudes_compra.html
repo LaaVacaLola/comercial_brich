@@ -34,6 +34,14 @@
           <button id="btnRecargar" type="button" class="btn-icon" title="Recargar">R</button>
         </div>
         <input id="buscarSolicitud" type="search" placeholder="Buscar folio o cliente">
+        <select id="filtroEstado">
+          <option value="">Todos los estados</option>
+          <option value="borrador">Borrador</option>
+          <option value="enviada">Enviada</option>
+          <option value="aceptada">Aceptada</option>
+          <option value="rechazada">Rechazada</option>
+          <option value="vencida">Vencida</option>
+        </select>
         <div id="solicitudesList" class="solicitudes-list"></div>
       </aside>
 
@@ -66,6 +74,10 @@
           <div class="actions-row">
             <button id="btnGuardarSolicitud" type="submit" class="btn-primary">Guardar cotizacion</button>
             <button id="btnEnviarSolicitud" type="button" class="btn-secondary">Marcar enviada</button>
+            <button id="btnAceptarSolicitud" type="button" class="btn-secondary">Aceptar</button>
+            <button id="btnRechazarSolicitud" type="button" class="btn-secondary">Rechazar</button>
+            <button id="btnVencerSolicitud" type="button" class="btn-secondary">Vencer</button>
+            <button id="btnImprimirSolicitud" type="button" class="btn-secondary">Imprimir</button>
           </div>
         </form>
 
@@ -75,6 +87,7 @@
           </div>
 
           <div class="item-add">
+            <input id="buscarProducto" type="search" placeholder="Buscar producto por SKU, nombre o categoria">
             <select id="productoSelect">
               <option value="">Seleccionar producto</option>
             </select>
@@ -107,5 +120,7 @@
       </section>
     </section>
   </main>
+
+  <section id="printArea" class="print-area"></section>
 </body>
 </html>

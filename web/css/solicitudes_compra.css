@@ -331,3 +331,105 @@ th {
     flex-direction: column;
   }
 }
+
+.actions-row {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.actions-row button {
+  min-width: 130px;
+}
+
+.item-add {
+  grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1.4fr) 110px auto;
+}
+
+.print-area {
+  display: none;
+}
+
+.print-document {
+  background: #fff;
+  color: #111827;
+  font-family: Arial, sans-serif;
+  padding: 24px;
+}
+
+.print-header {
+  align-items: flex-start;
+  border-bottom: 2px solid #111827;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+}
+
+.print-header h1 {
+  color: #111827;
+  font-size: 1.8rem;
+}
+
+.print-client {
+  margin-bottom: 20px;
+}
+
+.print-grid {
+  display: grid;
+  gap: 8px 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.print-table {
+  margin-top: 14px;
+}
+
+.print-table th,
+.print-table td {
+  border: 1px solid #d1d5db;
+  padding: 9px;
+}
+
+.print-totals {
+  display: grid;
+  gap: 7px;
+  justify-content: end;
+  margin-top: 18px;
+}
+
+.print-totals p {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 90px 120px;
+}
+
+.print-notes {
+  border-top: 1px solid #d1d5db;
+  margin-top: 18px;
+  padding-top: 12px;
+}
+
+@media (max-width: 980px) {
+  .item-add {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  body > :not(.print-area) {
+    display: none !important;
+  }
+
+  .print-area {
+    display: block;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .print-document {
+    padding: 0;
+  }
+}
