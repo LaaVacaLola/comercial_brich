@@ -1,5 +1,20 @@
 // api/controllers/producto.controller.js
+const mongoose = require("mongoose");
 const Producto = require("../models/Producto");
+
+const CAMPOS_PRODUCTO_EDITABLES = [
+  "id_padre",
+  "nombre",
+  "descripcion",
+  "imagen",
+  "region",
+  "precio",
+  "unidad",
+  "categoria",
+  "activo",
+  "aprobado",
+  "oferta",
+];
 
 function cleanNumber(value, label) {
   const number = Number(value);
@@ -9,6 +24,102 @@ function cleanNumber(value, label) {
     throw err;
   }
   return number;
+}
+
+function cleanString(value) {
+  return String(value ?? "").trim();
+}
+
+function isValidObjectId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
+
+function parseBoolean(value, label) {
+  if (typeof value === "boolean") return value;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+
+  const err = new Error(`${label} debe ser booleano`);
+  err.status = 400;
+  throw err;
+}
+
+function normalizarPrecio(value) {
+  const precio = cleanNumber(value, "El precio");
+  if (precio < 0) {
+    const err = new Error("El precio no puede ser negativo");
+    err.status = 400;
+    throw err;
+  }
+  return precio;
+}
+
+function estadoDesdeActivo(activo) {
+  return activo ? "activo" : "inactivo";
+}
+
+async function generarSkuProducto(fecha = new Date()) {
+  const year = fecha.getFullYear();
+  const month = String(fecha.getMonth() + 1).padStart(2, "0");
+  const day = String(fecha.getDate()).padStart(2, "0");
+  const prefix = `SKU-${year}${month}${day}`;
+  const ultimo = await Producto.findOne({ sku: new RegExp(`^${prefix}-`) })
+    .sort({ sku: -1 })
+    .select("sku")
+    .lean();
+  const ultimoNumero = Number(String(ultimo?.sku || "").split("-").pop());
+  const siguiente = Number.isFinite(ultimoNumero) ? ultimoNumero + 1 : 1;
+  return `${prefix}-${String(siguiente).padStart(4, "0")}`;
+}
+
+async function crearSkuUnico() {
+  for (let intento = 0; intento < 5; intento += 1) {
+    const sku = await generarSkuProducto();
+    const existe = await Producto.exists({ sku });
+    if (!existe) return sku;
+  }
+
+  const err = new Error("No se pudo generar un SKU unico");
+  err.status = 409;
+  throw err;
+}
+
+function normalizarPayloadProducto(body, { parcial = false } = {}) {
+  const data = {};
+
+  if (body.id_padre !== undefined) data.id_padre = cleanString(body.id_padre);
+  if (body.nombre !== undefined) data.nombre = cleanString(body.nombre);
+  if (body.descripcion !== undefined) data.descripcion = cleanString(body.descripcion);
+  if (body.imagen !== undefined) data.imagen = cleanString(body.imagen);
+  if (body.region !== undefined) data.region = cleanString(body.region);
+  if (body.unidad !== undefined) data.unidad = cleanString(body.unidad);
+  if (body.categoria !== undefined) data.categoria = cleanString(body.categoria);
+  if (body.precio !== undefined) data.precio = normalizarPrecio(body.precio);
+  if (body.aprobado !== undefined) data.aprobado = parseBoolean(body.aprobado, "Aprobado");
+
+  if (body.activo !== undefined) {
+    data.activo = parseBoolean(body.activo, "Activo");
+    data.estado = estadoDesdeActivo(data.activo);
+  } else if (body.estado !== undefined) {
+    data.activo = body.estado === "activo";
+    data.estado = estadoDesdeActivo(data.activo);
+  }
+
+  if (!parcial || data.nombre !== undefined) {
+    if (!data.nombre) {
+      const err = new Error("El nombre es obligatorio");
+      err.status = 400;
+      throw err;
+    }
+  }
+
+  if (!parcial && data.precio === undefined) {
+    const err = new Error("El precio es obligatorio");
+    err.status = 400;
+    throw err;
+  }
+
+  return data;
 }
 
 function normalizarOferta(oferta, precioProducto) {
@@ -116,9 +227,6 @@ function precioAEntero(value) {
   return Number.isFinite(number) ? Math.round(number) : null;
 }
 
-// ==============================
-// GET: Listar todos los productos
-// ==============================
 exports.getProductos = async (req, res) => {
   try {
     const productos = await Producto.find().sort({ createdAt: -1 });
@@ -128,15 +236,17 @@ exports.getProductos = async (req, res) => {
   }
 };
 
-// ==============================
-// GET: Obtener un producto por ID
-// ==============================
 exports.getProductoById = async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: "ID de producto invalido" });
+    }
+
     const producto = await Producto.findById(req.params.id);
 
-    if (!producto)
+    if (!producto) {
       return res.status(404).json({ error: "Producto no encontrado" });
+    }
 
     res.json(producto);
   } catch (err) {
@@ -144,38 +254,28 @@ exports.getProductoById = async (req, res) => {
   }
 };
 
-// ==============================
-// POST: Crear producto (solo admin)
-// ==============================
 exports.createProducto = async (req, res) => {
   try {
-    const { id_padre, id_hijo, nombre, region, precio } = req.body;
+    const data = normalizarPayloadProducto(req.body);
+    data.sku = await crearSkuUnico();
 
-    if (!nombre || !precio) {
-      return res.status(400).json({ error: "Nombre y precio son obligatorios" });
+    if (data.activo === undefined) {
+      data.activo = true;
+      data.estado = "activo";
     }
 
-    const nuevo = new Producto({
-      id_padre,
-      id_hijo,
-      nombre,
-      region,
-      precio,
-      estado: "activo",
-      aprobado: false,
-    });
+    if (data.aprobado === undefined) data.aprobado = false;
 
+    const nuevo = new Producto(data);
     await nuevo.save();
 
     res.status(201).json(nuevo);
   } catch (err) {
-    res.status(500).json({ error: "Error al crear producto", details: err.message });
+    const status = err.code === 11000 ? 409 : err.status || 500;
+    res.status(status).json({ error: "Error al crear producto", details: err.message });
   }
 };
 
-// ==============================
-// PUT: Normalizar precios a enteros
-// ==============================
 exports.normalizarPreciosProductos = async (_req, res) => {
   try {
     const productos = await Producto.collection.find({}).toArray();
@@ -196,10 +296,19 @@ exports.normalizarPreciosProductos = async (_req, res) => {
         continue;
       }
 
-      if (producto.precio !== precioNormalizado) {
+      const activo = typeof producto.activo === "boolean"
+        ? producto.activo
+        : producto.estado !== "inactivo";
+      const update = {
+        precio: precioNormalizado,
+        activo,
+        estado: estadoDesdeActivo(activo),
+      };
+
+      if (producto.precio !== precioNormalizado || producto.activo !== activo || producto.estado !== update.estado) {
         await Producto.collection.updateOne(
           { _id: producto._id },
-          { $set: { precio: precioNormalizado } }
+          { $set: update }
         );
         actualizados += 1;
       }
@@ -219,22 +328,33 @@ exports.normalizarPreciosProductos = async (_req, res) => {
   }
 };
 
-// ==============================
-// PUT: Actualizar producto
-// ==============================
 exports.updateProducto = async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: "ID de producto invalido" });
+    }
+
     const producto = await Producto.findById(req.params.id);
 
-    if (!producto)
+    if (!producto) {
       return res.status(404).json({ error: "Producto no encontrado" });
+    }
 
-    const update = { ...req.body };
+    const payloadPermitido = {};
+    for (const campo of CAMPOS_PRODUCTO_EDITABLES) {
+      if (req.body[campo] !== undefined) payloadPermitido[campo] = req.body[campo];
+    }
+
+    const update = normalizarPayloadProducto(payloadPermitido, { parcial: true });
     const precioFinal = update.precio !== undefined ? update.precio : producto.precio;
     const ofertaNormalizada = normalizarOferta(update.oferta, precioFinal);
 
     if (ofertaNormalizada !== undefined) {
       update.oferta = ofertaNormalizada;
+    }
+
+    if (!producto.sku) {
+      update.sku = await crearSkuUnico();
     }
 
     const updated = await Producto.findByIdAndUpdate(
@@ -245,19 +365,22 @@ exports.updateProducto = async (req, res) => {
 
     res.json(updated);
   } catch (err) {
-    res.status(err.status || 500).json({ error: "Error al actualizar producto", details: err.message });
+    const status = err.code === 11000 ? 409 : err.status || 500;
+    res.status(status).json({ error: "Error al actualizar producto", details: err.message });
   }
 };
 
-// ==============================
-// DELETE: Eliminar producto
-// ==============================
 exports.deleteProducto = async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: "ID de producto invalido" });
+    }
+
     const deleted = await Producto.findByIdAndDelete(req.params.id);
 
-    if (!deleted)
+    if (!deleted) {
       return res.status(404).json({ error: "Producto no encontrado" });
+    }
 
     res.json({ message: "Producto eliminado correctamente" });
   } catch (err) {

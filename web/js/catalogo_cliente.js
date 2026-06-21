@@ -33,8 +33,11 @@ async function cargarProductos() {
 
     const data = await resp.json();
 
-    // filtramos solo aprobados y activos
-    productos = data.filter(p => p.aprobado === true && p.estado === "activo");
+    // filtramos solo aprobados y activos, con compatibilidad para productos antiguos
+    productos = data.filter(p => {
+      const activo = typeof p.activo === "boolean" ? p.activo : p.estado === "activo";
+      return p.aprobado === true && activo;
+    });
 
     console.log("Productos cargados:", productos);
   } catch (err) {
