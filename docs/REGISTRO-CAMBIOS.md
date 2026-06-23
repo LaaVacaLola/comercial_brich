@@ -26,6 +26,14 @@ Bitacora append-only del trabajo por fases.
 **Pruebas:** `node --check api/models/SolicitudCompra.js`, `node --check api/controllers/solicitudCompra.controller.js`, `node --check api/routes/solicitudCompra.routes.js`, `node --check server.js`, `node --check web/js/solicitudes_compra.js`, `node --check web/js/admin_nav.js` ejecutados correctamente. No se ejecuto `npm test` porque el script sigue siendo un placeholder que falla intencionalmente.
 **Pendiente / deuda tecnica:** Verificar manualmente flujo completo con Mongo y sesion admin. La pantalla permite crear, editar, agregar/quitar items y marcar enviada; aceptar/rechazar/vencer queda disponible por API y puede exponerse en UI en Fase 3. No se agrego acceso rapido al dashboard por problemas de codificacion existentes en ese archivo; el menu admin si incluye Cotizaciones.
 
+## [2026-06-22] Ordenes de compra de la empresa local
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `api/controllers/empresa.controller.js` (nuevo export `getOrdenesEmpresa`: lee RUT de la empresa guardada, resuelve codigo proveedor via `buscarProveedor`, consulta OC en ChileCompra filtrando por `CodigoProveedor`), `api/routes/empresa.routes.js` (`GET /ordenes`), `web/html/ordenes_admin.html` (reemplazado datos de ejemplo por tabla real con paginacion y modal de detalle), `web/js/ordenes_admin.js` (reescrito completo: consume `/api/empresa/ordenes`, reutiliza helpers `MP` de `mercado_common.js`, modal de detalle con estructura `tender-sheet` igual que `mercado_ordenes.js`).
+**Decisiones tecnicas:** El detalle individual de cada OC se obtiene de `/api/mercado-publico/ordenes/:codigo` (ya existente) para no duplicar esa logica. El endpoint `/api/empresa/ordenes` actua como proxy especializado: resuelve el RUT → codigo proveedor → lista OC, todo en backend. La pagina consume `mercado_publico.css` en lugar del CSS propio anterior para mantener consistencia visual.
+**Edge cases cubiertos:** Empresa sin RUT configurado (422 con mensaje claro), RUT sin resultado en MP (404), error de red a ChileCompra (502), sin ordenes en el periodo (mensaje de estado).
+**Pruebas:** `node -c` OK en todos los archivos modificados.
+**Pendiente / deuda tecnica:** El codigo proveedor se resuelve en cada peticion; si la API de ChileCompra es lenta se puede cachear en el modelo Empresa.
+
 ## [2026-06-22] Seguridad - .gitignore y proteccion de user.routes.js
 **Archivos creados:** `.gitignore` (excluye `node_modules/`, `.env`, `*.log`, archivos de SO y editor).
 **Archivos modificados:** `api/routes/user.routes.js` (agregado `router.use(auth, adminAuth)` al inicio; todos los endpoints de gestion de usuarios ahora requieren token valido y rol admin).

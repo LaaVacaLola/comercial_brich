@@ -3,101 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Órdenes de Compra (Administrador)</title>
-  <link rel="stylesheet" href="../css/ordenes_admin.css">
+  <title>Ordenes de Compra</title>
+  <link rel="stylesheet" href="../css/mercado_publico.css">
   <link rel="stylesheet" href="../css/admin_nav.css">
   <script defer src="../js/admin_nav.js"></script>
+  <script defer src="../js/mercado_common.js"></script>
   <script defer src="../js/ordenes_admin.js"></script>
 </head>
 <body>
-  <!-- 🔹 Navbar -->
   <header class="navbar">
     <div class="logo">
       <img src="../img/logo.png" alt="Logo Comercial Brich">
       <span>Comercial Brich</span>
     </div>
-    <a href="dashboard_admin.html" class="btn-back">← Volver al Dashboard</a>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
   </header>
 
   <main class="container">
-    <h1>🛒 Órdenes de Compra (Administrador)</h1>
-    <p class="subtitle">Gestiona, revisa y administra órdenes de compra</p>
+    <h1>Ordenes de Compra</h1>
+    <p class="subtitle">Ordenes de Mercado Publico recibidas por la empresa.</p>
 
-    <!-- 🔹 Filtros -->
     <section class="filters">
-      <input type="text" id="searchInput" placeholder="🔍 Buscar por folio o cliente...">
-      <select id="statusFilter">
-        <option value="todos">Todos</option>
-        <option value="pendiente">Pendiente</option>
+      <input type="date" id="fechaDesde" aria-label="Fecha desde">
+      <input type="date" id="fechaHasta" aria-label="Fecha hasta">
+      <select id="estado">
+        <option value="todos">Todos los estados</option>
+        <option value="enviadaproveedor">Enviada proveedor</option>
         <option value="aceptada">Aceptada</option>
-        <option value="rechazada">Rechazada</option>
+        <option value="cancelada">Cancelada</option>
+        <option value="recepcionconforme">Recepcion conforme</option>
+        <option value="pendienterecepcion">Pendiente recepcion</option>
       </select>
-      <input type="date" id="fromDate">
-      <input type="date" id="toDate">
-      <button class="btn-primary">Filtrar</button>
+      <button id="buscarBtn" class="btn-primary" type="button">Buscar</button>
+      <button id="limpiarBtn" class="btn-secondary" type="button">Limpiar</button>
     </section>
 
-    <!-- 🔹 Tabla -->
+    <p id="statusMessage" class="status-message">Cargando ordenes de la empresa...</p>
+
     <section class="table-wrapper">
       <table>
         <thead>
           <tr>
             <th>Folio</th>
+            <th>Nombre</th>
             <th>Cliente</th>
-            <th>Organismo</th>
             <th>Fecha</th>
             <th>Total</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
-        <tbody id="ordersTable">
-          <tr>
-            <td>OC-2025-00123</td>
-            <td>Municipalidad de Arica</td>
-            <td>Cárcel de Arica</td>
-            <td>2025-09-08</td>
-            <td>$1.250.000</td>
-            <td><span class="status pending">Pendiente</span></td>
-            <td>
-            <div class="acciones">
-                <button class="btn-success">Aceptar</button>
-                <button class="btn-danger">Rechazar</button>
-                <button class="btn-secondary view-btn" data-id="1">Ver</button>
-            </div>
-            </td>
-          </tr>
-          <tr>
-            <td>OC-2025-00124</td>
-            <td>Hospital Regional</td>
-            <td>CCP</td>
-            <td>2025-09-07</td>
-            <td>$320.000</td>
-            <td><span class="status success">Aceptada</span></td>
-            <td>
-                <div class="acciones">
-                    <button style="visibility:hidden;">---</button>
-                    <button style="visibility:hidden;">---</button>
-                    <button class="btn-secondary view-btn" data-id="2">Ver</button>
-                </div>    
-            </td>
-          </tr>
-        </tbody>
+        <tbody id="ordersTable"></tbody>
       </table>
+    </section>
+
+    <section class="pagination-bar" aria-label="Paginacion">
+      <button id="prevPageBtn" class="btn-secondary" type="button">Anterior</button>
+      <div id="pageButtons" class="page-buttons"></div>
+      <button id="nextPageBtn" class="btn-secondary" type="button">Siguiente</button>
+      <span id="pageInfo" class="page-info">Pagina 0 de 0</span>
     </section>
   </main>
 
-    <!-- Modal Detalle -->
-    <div id="orderModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn">&times;</span>
-        <h2>📋 Detalle de Orden</h2>
-        <div id="orderDetails"></div>
-        <div class="modal-actions">
-        <button class="btn-primary">Aceptar</button>
-        <button class="btn-danger">Rechazar</button>
-        </div>
+  <div id="detailModal" class="modal">
+    <div class="modal-content wide">
+      <span class="close-btn">&times;</span>
+      <h2>Detalle de orden</h2>
+      <div id="detailContent"></div>
     </div>
-    </div>
+  </div>
 </body>
 </html>
