@@ -60,6 +60,7 @@ app.use("/api/auth", require("./api/routes/auth.routes"));
 app.use("/api/dashboard", require("./api/routes/dashboard.routes"));
 app.use("/api/usuarios", require("./api/routes/user.routes")); // ✅ ya toma req.body
 app.use("/api/admin", require("./api/routes/admin.routes"));
+app.use("/api/empresa", require("./api/routes/empresa.routes"));
 app.use("/api/productos", require("./api/routes/producto.routes"));
 app.use("/api/solicitudes-compra", require("./api/routes/solicitudCompra.routes"));
 app.use("/api/mercado-publico", require("./api/routes/mercadoPublico.routes"));
