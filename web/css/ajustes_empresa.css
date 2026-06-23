@@ -1,0 +1,40 @@
+.empresa-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 1.5rem;
+}
+
+.empresa-field {
+  display: grid;
+  gap: 6px;
+}
+
+.empresa-field--full {
+  grid-column: 1 / -1;
+}
+
+.empresa-field label {
+  color: #64748b;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.empresa-field input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  padding: 12px 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.empresa-field input:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+.empresa-actions {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+}
