@@ -26,6 +26,22 @@ Bitacora append-only del trabajo por fases.
 **Pruebas:** `node --check api/models/SolicitudCompra.js`, `node --check api/controllers/solicitudCompra.controller.js`, `node --check api/routes/solicitudCompra.routes.js`, `node --check server.js`, `node --check web/js/solicitudes_compra.js`, `node --check web/js/admin_nav.js` ejecutados correctamente. No se ejecuto `npm test` porque el script sigue siendo un placeholder que falla intencionalmente.
 **Pendiente / deuda tecnica:** Verificar manualmente flujo completo con Mongo y sesion admin. La pantalla permite crear, editar, agregar/quitar items y marcar enviada; aceptar/rechazar/vencer queda disponible por API y puede exponerse en UI en Fase 3. No se agrego acceso rapido al dashboard por problemas de codificacion existentes en ese archivo; el menu admin si incluye Cotizaciones.
 
+## [2026-06-22] Seguridad - .gitignore y proteccion de user.routes.js
+**Archivos creados:** `.gitignore` (excluye `node_modules/`, `.env`, `*.log`, archivos de SO y editor).
+**Archivos modificados:** `api/routes/user.routes.js` (agregado `router.use(auth, adminAuth)` al inicio; todos los endpoints de gestion de usuarios ahora requieren token valido y rol admin).
+**Decisiones tecnicas:** Se aplico el mismo patron de `solicitudCompra.routes.js`. El `.env` ya existia en el indice de git; el `.gitignore` impide que futuros archivos `.env` sean versionados, pero no retira el actual del historial (requiere `git rm --cached .env` y rotacion de secretos).
+**Edge cases cubiertos:** Creacion de usuarios admin sin autenticacion, lectura de lista de usuarios sin token.
+**Pruebas:** `node -c api/routes/user.routes.js` OK.
+**Pendiente / deuda tecnica:** Retirar `.env` del historial de git y rotar `JWT_SECRET`, `MONGO_URI` y `MERCADO_PUBLICO_TICKET`.
+
+## [2026-06-22] Ajustes Empresa - datos basicos de la empresa local
+**Archivos creados:** `api/models/Empresa.js`, `api/controllers/empresa.controller.js`, `api/routes/empresa.routes.js`, `web/html/ajustes_empresa.html`, `web/js/ajustes_empresa.js`.
+**Archivos modificados:** `server.js` (montaje de `/api/empresa`), `web/js/admin_nav.js` (enlace "Empresa" como primer item del dropdown Ajustes).
+**Decisiones tecnicas:** Documento singleton con `key: "default"` (mismo patron que `MercadoPublicoConfig`). Todos los endpoints protegidos con `auth + adminAuth`. El email se valida con regex solo si viene no vacio. Los estilos del formulario van inline en el HTML para no crear un CSS de una sola pagina.
+**Edge cases cubiertos:** Empresa sin datos previos (upsert devuelve objeto vacio), email con formato invalido, campos opcionales vacios.
+**Pruebas:** `node -c` OK en todos los archivos nuevos y modificados.
+**Pendiente / deuda tecnica:** Conectar los datos de empresa a la vista imprimible de cotizaciones (cabecera del documento).
+
 ## [2026-06-21] Fase 3 - Pulido e integracion de cotizaciones
 **Archivos creados:** Ninguno.
 **Archivos modificados:** `web/html/solicitudes_compra.html` (filtro de estado, busqueda de productos, acciones de estado e impresion), `web/js/solicitudes_compra.js` (filtros, cambio de estado completo, generacion de vista imprimible), `web/css/solicitudes_compra.css` (layout de controles, estilos de impresion y media print), `docs/REGISTRO-CAMBIOS.md` (registro de fase).
