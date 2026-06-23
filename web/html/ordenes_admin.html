@@ -34,9 +34,35 @@
         <option value="recepcionconforme">Recepcion conforme</option>
         <option value="pendienterecepcion">Pendiente recepcion</option>
       </select>
+      <select id="fuenteDatos" aria-label="Fuente de datos">
+        <option value="cache">Cache local</option>
+        <option value="api">API ChileCompra</option>
+      </select>
       <button id="buscarBtn" class="btn-primary" type="button">Buscar</button>
       <button id="limpiarBtn" class="btn-secondary" type="button">Limpiar</button>
     </section>
+
+    <section id="jobPanel" class="settings-card" hidden>
+      <div class="job-header">
+        <div>
+          <strong id="jobTitle">Descarga de ordenes</strong>
+          <span id="jobStatus" class="status-badge"></span>
+        </div>
+        <div class="job-actions">
+          <button id="descargarBtn" class="btn-primary" type="button">Descargar OC</button>
+          <button id="detenerBtn" class="btn-danger" type="button" hidden>Detener</button>
+        </div>
+      </div>
+      <div id="jobProgressBar" hidden>
+        <div class="progress-track">
+          <div id="jobProgressFill" class="progress-bar"></div>
+        </div>
+        <span id="jobProgressText">0%</span>
+      </div>
+      <p id="jobLog" class="job-log-line"></p>
+    </section>
+
+    <button id="descargarBtnTop" class="btn-secondary" type="button">Descargar OC de ChileCompra</button>
 
     <p id="statusMessage" class="status-message">Cargando ordenes de la empresa...</p>
 

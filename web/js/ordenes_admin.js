@@ -5,12 +5,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const pageInfo = document.getElementById("pageInfo");
   const prevPageBtn = document.getElementById("prevPageBtn");
   const nextPageBtn = document.getElementById("nextPageBtn");
+  const jobPanel = document.getElementById("jobPanel");
+  const jobTitle = document.getElementById("jobTitle");
+  const jobStatus = document.getElementById("jobStatus");
+  const jobProgressBar = document.getElementById("jobProgressBar");
+  const jobProgressFill = document.getElementById("jobProgressFill");
+  const jobProgressText = document.getElementById("jobProgressText");
+  const jobLog = document.getElementById("jobLog");
+  const descargarBtn = document.getElementById("descargarBtn");
+  const detenerBtn = document.getElementById("detenerBtn");
+  const descargarBtnTop = document.getElementById("descargarBtnTop");
+  const fuenteDatos = document.getElementById("fuenteDatos");
   const pageSize = 20;
 
   let ordenes = [];
   let currentPage = 1;
   let pageCache = new Map();
   let detailCache = new Map();
+  let pollTimer = null;
+  let lastOcProcesadas = 0;
 
   if (!MP.getTokenOrRedirect()) return;
   MP.setupModal();
@@ -21,9 +34,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setDefaultFilters() {
     const today = new Date();
-    const weekAgo = new Date();
-    weekAgo.setDate(today.getDate() - 7);
-    document.getElementById("fechaDesde").value = isoDate(weekAgo);
+    const monthsAgo = new Date();
+    monthsAgo.setMonth(today.getMonth() - 6);
+    document.getElementById("fechaDesde").value = isoDate(monthsAgo);
     document.getElementById("fechaHasta").value = isoDate(today);
     document.getElementById("estado").value = "todos";
   }
@@ -216,7 +229,6 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       MP.setMessage("Cargando detalle...");
       if (!detailCache.has(codigo)) {
-        // Usar el endpoint de Mercado Publico directamente para el detalle
         const token = localStorage.getItem("token");
         const res = await fetch(`/api/mercado-publico/ordenes/${encodeURIComponent(codigo)}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -232,9 +244,206 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // --- Job panel ---
+
+  const statusLabels = {
+    queued: "En cola",
+    running: "Descargando",
+    complete: "Completado",
+    error: "Error",
+    cancelled: "Detenido",
+  };
+
+  function setJobButtons(isActive) {
+    descargarBtn.hidden = isActive;
+    detenerBtn.hidden = !isActive;
+    descargarBtnTop.disabled = isActive;
+  }
+
+  function renderJobPanel(job) {
+    if (!job) {
+      jobPanel.hidden = true;
+      setJobButtons(false);
+      return;
+    }
+
+    jobPanel.hidden = false;
+
+    const pct = job.progress?.porcentaje ?? 0;
+    const oc = job.progress?.ocProcesadas ?? 0;
+    const isActive = ["queued", "running"].includes(job.status);
+
+    jobTitle.textContent = `Descarga: ${job.entidadNombre || job.entidadCodigo}`;
+    jobStatus.textContent = statusLabels[job.status] || job.status;
+    jobStatus.className = `status-badge status-badge--${job.status}`;
+    setJobButtons(isActive);
+
+    if (isActive) {
+      jobProgressBar.hidden = false;
+      jobProgressFill.style.width = `${pct}%`;
+      jobProgressText.textContent = `${pct}% — ${oc} OC guardadas`;
+      jobLog.textContent = job.logs?.at(-1)?.message || "";
+    } else {
+      jobProgressBar.hidden = true;
+      jobLog.textContent = job.status === "complete"
+        ? `Finalizado: ${oc} OC guardadas en cache.`
+        : (job.error || "");
+    }
+  }
+
+  function stopPolling() {
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  // Recarga silenciosa del cache: actualiza ordenes[] y la tabla sin resetear la pagina actual
+  async function silentCacheRefresh() {
+    try {
+      const params = new URLSearchParams();
+      const fechaDesde = document.getElementById("fechaDesde").value;
+      const fechaHasta = document.getElementById("fechaHasta").value;
+      const estado = document.getElementById("estado").value;
+      if (fechaDesde) params.set("fechaDesde", fechaDesde);
+      if (fechaHasta) params.set("fechaHasta", fechaHasta);
+      if (estado && estado !== "todos") params.set("estado", estado);
+
+      const token = localStorage.getItem("token");
+      const url = `/api/empresa/ordenes/cache${params.toString() ? `?${params}` : ""}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return;
+      const data = await res.json();
+      const nuevas = MP.getListado(data);
+
+      if (nuevas.length !== ordenes.length) {
+        ordenes = nuevas;
+        pageCache = new Map();
+        renderTable();
+        MP.setMessage(`${ordenes.length} OC en cache (descargando...)`);
+      }
+    } catch (_) {
+      // silencioso: no interrumpir el polling
+    }
+  }
+
+  function startPolling() {
+    stopPolling();
+    lastOcProcesadas = 0;
+
+    pollTimer = setInterval(async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/empresa/ordenes/job", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        renderJobPanel(data.job);
+
+        const ocActuales = data.job?.progress?.ocProcesadas ?? 0;
+
+        // Si el job guardó nuevas OC desde el último poll, refrescar la tabla en modo cache
+        if (fuenteDatos.value === "cache" && ocActuales > lastOcProcesadas) {
+          lastOcProcesadas = ocActuales;
+          await silentCacheRefresh();
+        }
+
+        if (!data.job || ["complete", "error", "cancelled"].includes(data.job.status)) {
+          stopPolling();
+          if (data.job?.status === "complete") {
+            fuenteDatos.value = "cache";
+            await loadOrdenes();
+          }
+        }
+      } catch (_) {
+        stopPolling();
+      }
+    }, 3000);
+  }
+
+  async function checkJobStatus() {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/empresa/ordenes/job", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      renderJobPanel(data.job);
+
+      if (data.job && ["queued", "running"].includes(data.job.status)) {
+        lastOcProcesadas = data.job.progress?.ocProcesadas ?? 0;
+        startPolling();
+      }
+    } catch (_) {
+      jobPanel.hidden = true;
+    }
+  }
+
+  async function iniciarDescarga() {
+    try {
+      setJobButtons(true);
+      descargarBtnTop.disabled = true;
+      MP.setMessage("Iniciando descarga de ordenes en ChileCompra...");
+
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/empresa/ordenes/job", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        MP.setMessage(data.error || `Error ${res.status}`, true);
+        setJobButtons(false);
+        descargarBtnTop.disabled = false;
+        return;
+      }
+
+      renderJobPanel(data.job);
+      fuenteDatos.value = "cache";
+      MP.setMessage("Job iniciado. Las OC aparecen en la lista a medida que se descargan.");
+      startPolling();
+    } catch (err) {
+      MP.setMessage(err.message, true);
+      setJobButtons(false);
+      descargarBtnTop.disabled = false;
+    }
+  }
+
+  async function detenerDescarga() {
+    try {
+      detenerBtn.disabled = true;
+      MP.setMessage("Deteniendo descarga...");
+
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/empresa/ordenes/job", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        MP.setMessage(data.error || `Error ${res.status}`, true);
+        detenerBtn.disabled = false;
+        return;
+      }
+
+      stopPolling();
+      renderJobPanel(data.job);
+      MP.setMessage("Descarga detenida. Las OC ya guardadas quedan en cache.");
+    } catch (err) {
+      MP.setMessage(err.message, true);
+      detenerBtn.disabled = false;
+    }
+  }
+
+  // --- Carga de ordenes ---
+
   async function loadOrdenes() {
     try {
-      MP.setMessage("Consultando ordenes de la empresa en ChileCompra...");
+      const fuente = fuenteDatos.value;
+      const label = fuente === "cache" ? "cache local" : "API ChileCompra";
+      MP.setMessage(`Consultando ordenes desde ${label}...`);
       tbody.innerHTML = "";
       pageCache = new Map();
       detailCache = new Map();
@@ -248,8 +457,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (fechaHasta) params.set("fechaHasta", fechaHasta);
       if (estado && estado !== "todos") params.set("estado", estado);
 
+      const endpoint = fuente === "cache"
+        ? `/api/empresa/ordenes/cache`
+        : `/api/empresa/ordenes`;
+      const url = `${endpoint}${params.toString() ? `?${params}` : ""}`;
+
       const token = localStorage.getItem("token");
-      const url = `/api/empresa/ordenes${params.toString() ? `?${params}` : ""}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
 
@@ -263,14 +476,18 @@ document.addEventListener("DOMContentLoaded", () => {
       ordenes = MP.getListado(data);
 
       if (!ordenes.length) {
-        MP.renderEmpty(tbody, 7, "No se encontraron ordenes para los filtros indicados.");
+        const hint = fuente === "cache"
+          ? " Usa 'Descargar OC de ChileCompra' para poblar el cache."
+          : "";
+        MP.renderEmpty(tbody, 7, `No se encontraron ordenes para los filtros indicados.${hint}`);
         renderPageButtons();
-        MP.setMessage("Sin resultados.");
+        MP.setMessage(`Sin resultados en ${label}.${hint}`);
         return;
       }
 
+      const origen = data.fromCache ? "cache local" : "ChileCompra";
       renderTable();
-      MP.setMessage(`${ordenes.length} ordenes encontradas (proveedor ${data.codigoProveedor || ""}).`);
+      MP.setMessage(`${ordenes.length} ordenes encontradas (${origen}, proveedor ${data.codigoProveedor || ""}).`);
     } catch (err) {
       ordenes = [];
       pageCache = new Map();
@@ -285,9 +502,13 @@ document.addEventListener("DOMContentLoaded", () => {
     setDefaultFilters();
     loadOrdenes();
   });
+  descargarBtn.addEventListener("click", iniciarDescarga);
+  detenerBtn.addEventListener("click", detenerDescarga);
+  descargarBtnTop.addEventListener("click", iniciarDescarga);
   prevPageBtn.addEventListener("click", () => goToPage(currentPage - 1));
   nextPageBtn.addEventListener("click", () => goToPage(currentPage + 1));
 
   setDefaultFilters();
+  checkJobStatus();
   loadOrdenes();
 });
