@@ -1985,6 +1985,7 @@ module.exports = {
   guardarAnalisisGenerado,
   obtenerEstadoConfiguracion,
   guardarTicket,
+  iniciarDescargaOrdenesJob,
 };
 
 setTimeout(() => {

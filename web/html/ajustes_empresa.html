@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ajustes Empresa</title>
+  <link rel="stylesheet" href="../css/mercado_publico.css">
+  <link rel="stylesheet" href="../css/admin_nav.css">
+  <link rel="stylesheet" href="../css/ajustes_empresa.css">
+  <script defer src="../js/admin_nav.js"></script>
+  <script defer src="../js/ajustes_empresa.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
+  </header>
+
+  <main class="container">
+    <h1>Datos de la Empresa</h1>
+    <p class="subtitle">Informacion de tu empresa que aparece en cotizaciones y documentos.</p>
+
+    <p id="statusMessage" class="status-message">Cargando datos...</p>
+
+    <section class="settings-grid">
+      <article class="settings-card">
+        <h2>Informacion general</h2>
+        <form id="empresaForm">
+          <div class="empresa-fields">
+            <div class="empresa-field">
+              <label for="razonSocial">Razon social</label>
+              <input id="razonSocial" type="text" autocomplete="organization" placeholder="Ej: Comercial Brich Ltda.">
+            </div>
+            <div class="empresa-field">
+              <label for="rut">RUT</label>
+              <input id="rut" type="text" autocomplete="off" placeholder="Ej: 76.123.456-7">
+            </div>
+            <div class="empresa-field">
+              <label for="email">Correo electronico</label>
+              <input id="email" type="email" autocomplete="email" placeholder="Ej: contacto@empresa.cl">
+            </div>
+            <div class="empresa-field">
+              <label for="telefono">Telefono</label>
+              <input id="telefono" type="tel" autocomplete="tel" placeholder="Ej: +56 9 8765 4321">
+            </div>
+            <div class="empresa-field empresa-field--full">
+              <label for="direccion">Direccion</label>
+              <input id="direccion" type="text" autocomplete="street-address" placeholder="Ej: Av. Principal 123, Santiago">
+            </div>
+            <div class="empresa-field empresa-field--full">
+              <label for="nombreContacto">Nombre de contacto</label>
+              <input id="nombreContacto" type="text" autocomplete="name" placeholder="Ej: Juan Perez">
+            </div>
+          </div>
+          <div class="empresa-actions">
+            <button class="btn-primary" type="submit">Guardar cambios</button>
+          </div>
+        </form>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

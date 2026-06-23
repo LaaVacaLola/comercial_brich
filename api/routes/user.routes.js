@@ -4,6 +4,11 @@ const router = express.Router();
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const Rol = require("../models/Rol");
+const auth = require("../middlewares/authMiddleware");
+const adminAuth = require("../middlewares/adminMiddleware");
+
+// Gestion de usuarios: solo administradores autenticados
+router.use(auth, adminAuth);
 
 // ===============================
 // Obtener todos

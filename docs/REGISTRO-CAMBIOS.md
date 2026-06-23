@@ -26,6 +26,44 @@ Bitacora append-only del trabajo por fases.
 **Pruebas:** `node --check api/models/SolicitudCompra.js`, `node --check api/controllers/solicitudCompra.controller.js`, `node --check api/routes/solicitudCompra.routes.js`, `node --check server.js`, `node --check web/js/solicitudes_compra.js`, `node --check web/js/admin_nav.js` ejecutados correctamente. No se ejecuto `npm test` porque el script sigue siendo un placeholder que falla intencionalmente.
 **Pendiente / deuda tecnica:** Verificar manualmente flujo completo con Mongo y sesion admin. La pantalla permite crear, editar, agregar/quitar items y marcar enviada; aceptar/rechazar/vencer queda disponible por API y puede exponerse en UI en Fase 3. No se agrego acceso rapido al dashboard por problemas de codificacion existentes en ese archivo; el menu admin si incluye Cotizaciones.
 
+## [2026-06-22] Detener descarga y refresco en tiempo real
+**Archivos modificados:** `api/controllers/empresa.controller.js` (nuevo export `cancelarJobDescargaEmpresa`), `api/routes/empresa.routes.js` (`DELETE /ordenes/job`), `api/services/mercadoPublico.service.js` (`iniciarDescargaOrdenesJob` agregada al `module.exports`), `web/html/ordenes_admin.html` (boton "Detener" junto a "Descargar OC"), `web/js/ordenes_admin.js` (`detenerDescarga`, `silentCacheRefresh`, polling diferencial por `ocProcesadas`), `web/css/mercado_publico.css` (`.btn-danger`, `.job-actions`).
+**Decisiones tecnicas:** `cancelarJobDescargaEmpresa` busca el job activo del proveedor de la empresa y llama `cancelarJob` del servicio; el worker ya chequeaba `isJobCancelled` en cada iteracion, asi que la detención es limpia (no corta a mitad de una OC). El polling compara `ocProcesadas` entre ticks: si subio, hace un `silentCacheRefresh` que actualiza la tabla sin resetear la paginacion ni el scroll — el usuario ve las OC aparecer de una en una mientras corren. Al completar o detenerse el job se hace una recarga completa final. Se exporto `iniciarDescargaOrdenesJob` en el servicio (faltaba en `module.exports`), lo que causaba el error 500 anterior.
+**Edge cases cubiertos:** Job ya cancelado/completo (404 gracioso), detener boton doble click (se deshabilita inmediatamente), silentCacheRefresh falla silenciosamente para no interrumpir el polling.
+**Pruebas:** `node -c` OK en todos los archivos modificados.
+
+## [2026-06-22] Descarga y cache de OC personales
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `api/controllers/empresa.controller.js` (nuevos exports: `iniciarJobDescargaEmpresa`, `getJobDescargaEmpresa`, `getOrdenesEmpresaCache`), `api/routes/empresa.routes.js` (`POST /ordenes/job`, `GET /ordenes/job`, `GET /ordenes/cache`), `web/html/ordenes_admin.html` (select de fuente, panel de job con barra de progreso, boton flotante "Descargar OC"), `web/js/ordenes_admin.js` (modo cache/API, descarga de job, polling cada 3s, auto-recarga al completar), `web/css/mercado_publico.css` (clases `.job-header`, `.job-log-line`, `.status-badge` y variantes de color).
+**Decisiones tecnicas:** `POST /api/empresa/ordenes/job` resuelve RUT → codigoProveedor y delega en el sistema de jobs ya existente (`iniciarDescargaOrdenesJob`). El job descarga los ultimos 6 meses (heredado del parametro `rango: "ultimo_ano"` del worker) y guarda cada OC en `MercadoPublicoOrdenCache` con `proveedorCodigo` indexado. `GET /api/empresa/ordenes/cache` consulta ese cache filtrando por `proveedorCodigo` + rango de fechas y estado opcionales. El frontend detecta si hay un job activo al cargar la pagina y arranca polling automaticamente; al completar cambia la fuente a "cache" y recarga la tabla.
+**Edge cases cubiertos:** Job ya activo (el servicio devuelve el existente sin duplicar), empresa sin RUT (422), RUT sin codigo en MP (404), error de red a ChileCompra (502), cache vacio muestra hint para descargar, polling se detiene si el job termina en error o cancelado.
+**Pruebas:** `node -c` OK en todos los archivos modificados.
+**Pendiente / deuda tecnica:** El worker descarga "ultimo_ano" (parametro fijo del servicio); si se necesita rango personalizado habria que exponer ese parametro en `iniciarDescargaOrdenesJob`. El codigo proveedor aun se resuelve en cada peticion a `/ordenes/cache`; se puede cachear en el modelo Empresa.
+
+## [2026-06-22] Ordenes de compra de la empresa local
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `api/controllers/empresa.controller.js` (nuevo export `getOrdenesEmpresa`: lee RUT de la empresa guardada, resuelve codigo proveedor via `buscarProveedor`, consulta OC en ChileCompra filtrando por `CodigoProveedor`), `api/routes/empresa.routes.js` (`GET /ordenes`), `web/html/ordenes_admin.html` (reemplazado datos de ejemplo por tabla real con paginacion y modal de detalle), `web/js/ordenes_admin.js` (reescrito completo: consume `/api/empresa/ordenes`, reutiliza helpers `MP` de `mercado_common.js`, modal de detalle con estructura `tender-sheet` igual que `mercado_ordenes.js`).
+**Decisiones tecnicas:** El detalle individual de cada OC se obtiene de `/api/mercado-publico/ordenes/:codigo` (ya existente) para no duplicar esa logica. El endpoint `/api/empresa/ordenes` actua como proxy especializado: resuelve el RUT → codigo proveedor → lista OC, todo en backend. La pagina consume `mercado_publico.css` en lugar del CSS propio anterior para mantener consistencia visual.
+**Edge cases cubiertos:** Empresa sin RUT configurado (422 con mensaje claro), RUT sin resultado en MP (404), error de red a ChileCompra (502), sin ordenes en el periodo (mensaje de estado).
+**Pruebas:** `node -c` OK en todos los archivos modificados.
+**Pendiente / deuda tecnica:** El codigo proveedor se resuelve en cada peticion; si la API de ChileCompra es lenta se puede cachear en el modelo Empresa.
+
+## [2026-06-22] Seguridad - .gitignore y proteccion de user.routes.js
+**Archivos creados:** `.gitignore` (excluye `node_modules/`, `.env`, `*.log`, archivos de SO y editor).
+**Archivos modificados:** `api/routes/user.routes.js` (agregado `router.use(auth, adminAuth)` al inicio; todos los endpoints de gestion de usuarios ahora requieren token valido y rol admin).
+**Decisiones tecnicas:** Se aplico el mismo patron de `solicitudCompra.routes.js`. El `.env` ya existia en el indice de git; el `.gitignore` impide que futuros archivos `.env` sean versionados, pero no retira el actual del historial (requiere `git rm --cached .env` y rotacion de secretos).
+**Edge cases cubiertos:** Creacion de usuarios admin sin autenticacion, lectura de lista de usuarios sin token.
+**Pruebas:** `node -c api/routes/user.routes.js` OK.
+**Pendiente / deuda tecnica:** Retirar `.env` del historial de git y rotar `JWT_SECRET`, `MONGO_URI` y `MERCADO_PUBLICO_TICKET`.
+
+## [2026-06-22] Ajustes Empresa - datos basicos de la empresa local
+**Archivos creados:** `api/models/Empresa.js`, `api/controllers/empresa.controller.js`, `api/routes/empresa.routes.js`, `web/html/ajustes_empresa.html`, `web/js/ajustes_empresa.js`.
+**Archivos modificados:** `server.js` (montaje de `/api/empresa`), `web/js/admin_nav.js` (enlace "Empresa" como primer item del dropdown Ajustes).
+**Decisiones tecnicas:** Documento singleton con `key: "default"` (mismo patron que `MercadoPublicoConfig`). Todos los endpoints protegidos con `auth + adminAuth`. El email se valida con regex solo si viene no vacio. Los estilos del formulario van inline en el HTML para no crear un CSS de una sola pagina.
+**Edge cases cubiertos:** Empresa sin datos previos (upsert devuelve objeto vacio), email con formato invalido, campos opcionales vacios.
+**Pruebas:** `node -c` OK en todos los archivos nuevos y modificados.
+**Pendiente / deuda tecnica:** Conectar los datos de empresa a la vista imprimible de cotizaciones (cabecera del documento).
+
 ## [2026-06-21] Fase 3 - Pulido e integracion de cotizaciones
 **Archivos creados:** Ninguno.
 **Archivos modificados:** `web/html/solicitudes_compra.html` (filtro de estado, busqueda de productos, acciones de estado e impresion), `web/js/solicitudes_compra.js` (filtros, cambio de estado completo, generacion de vista imprimible), `web/css/solicitudes_compra.css` (layout de controles, estilos de impresion y media print), `docs/REGISTRO-CAMBIOS.md` (registro de fase).
