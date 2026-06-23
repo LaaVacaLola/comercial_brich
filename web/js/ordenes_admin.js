@@ -14,7 +14,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const jobLog = document.getElementById("jobLog");
   const descargarBtn = document.getElementById("descargarBtn");
   const detenerBtn = document.getElementById("detenerBtn");
-  const descargarBtnTop = document.getElementById("descargarBtnTop");
   const fuenteDatos = document.getElementById("fuenteDatos");
   const pageSize = 20;
 
@@ -187,8 +186,8 @@ document.addEventListener("DOMContentLoaded", () => {
           ${metric("Total neto", MP.formatMoney(valueAt(item, ["TotalNeto"], 0)))}
           ${metric("IVA", `${textAt(item, ["PorcentajeIva"])}%`)}
           ${metric("Moneda", textAt(item, ["TipoMoneda"]))}
-          ${metric("Forma de pago", textAt(item, ["FormaPago"]))}
-          ${metric("Tipo despacho", textAt(item, ["TipoDespacho"]))}
+          ${metric("Forma de pago", MP.formaPago(valueAt(item, ["FormaPago"])))}
+          ${metric("Tipo despacho", MP.tipoDespacho(valueAt(item, ["TipoDespacho"])))}
         </section>
 
         <div class="tender-layout">
@@ -257,7 +256,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function setJobButtons(isActive) {
     descargarBtn.hidden = isActive;
     detenerBtn.hidden = !isActive;
-    descargarBtnTop.disabled = isActive;
   }
 
   function renderJobPanel(job) {
@@ -395,7 +393,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) {
         MP.setMessage(data.error || `Error ${res.status}`, true);
         setJobButtons(false);
-        descargarBtnTop.disabled = false;
         return;
       }
 
@@ -406,7 +403,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       MP.setMessage(err.message, true);
       setJobButtons(false);
-      descargarBtnTop.disabled = false;
     }
   }
 
@@ -504,7 +500,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   descargarBtn.addEventListener("click", iniciarDescarga);
   detenerBtn.addEventListener("click", detenerDescarga);
-  descargarBtnTop.addEventListener("click", iniciarDescarga);
   prevPageBtn.addEventListener("click", () => goToPage(currentPage - 1));
   nextPageBtn.addEventListener("click", () => goToPage(currentPage + 1));
 

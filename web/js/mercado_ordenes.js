@@ -327,8 +327,8 @@ document.addEventListener("DOMContentLoaded", () => {
           <h3>Condiciones comerciales</h3>
           <div class="tender-info-grid">
             ${infoRow("Financiamiento", textAt(item, ["Financiamiento"]))}
-            ${infoRow("Forma de pago", textAt(item, ["FormaPago"]))}
-            ${infoRow("Tipo despacho", textAt(item, ["TipoDespacho"]))}
+            ${infoRow("Forma de pago", MP.formaPago(valueAt(item, ["FormaPago"])))}
+            ${infoRow("Tipo despacho", MP.tipoDespacho(valueAt(item, ["TipoDespacho"])))}
             ${infoRow("Pais", textAt(item, ["Pais"]))}
             ${infoRow("Descuentos", MP.formatMoney(valueAt(item, ["Descuentos"], 0)))}
             ${infoRow("Cargos", MP.formatMoney(valueAt(item, ["Cargos"], 0)))}

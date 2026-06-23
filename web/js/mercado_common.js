@@ -115,6 +115,34 @@ window.MercadoPublico = (() => {
     return fallback;
   }
 
+  const FORMA_PAGO = {
+    1: "Transferencia",
+    2: "Cheque",
+    3: "Efectivo",
+    4: "Vale vista",
+    5: "Carta de crédito",
+    6: "Otro",
+  };
+
+  const TIPO_DESPACHO = {
+    1: "Retiro en bodega del proveedor",
+    2: "Despacho en oficina del comprador",
+    3: "Despacho a domicilio",
+    4: "Despacho a bodega del comprador",
+    5: "Retiro en punto de entrega",
+    12: "Sin despacho (OC electrónica)",
+  };
+
+  function formaPago(value) {
+    if (!value && value !== 0) return "-";
+    return FORMA_PAGO[Number(value)] || String(value);
+  }
+
+  function tipoDespacho(value) {
+    if (!value && value !== 0) return "-";
+    return TIPO_DESPACHO[Number(value)] || String(value);
+  }
+
   function formatMoney(value) {
     const number = Number(String(value ?? "0").replace(/[^\d.-]/g, ""));
     return new Intl.NumberFormat("es-CL", {
@@ -221,6 +249,7 @@ window.MercadoPublico = (() => {
     appendCell,
     appendStatus,
     buildQuery,
+    formaPago,
     formatMoney,
     getListado,
     getTokenOrRedirect,
@@ -231,5 +260,6 @@ window.MercadoPublico = (() => {
     setMessage,
     setupModal,
     showDetail,
+    tipoDespacho,
   };
 })();
