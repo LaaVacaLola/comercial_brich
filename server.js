@@ -50,6 +50,21 @@ app.use(morgan("dev"));
 app.use(cors());
 app.use(express.json());
 
+// ===============================
+// Rutas publicas del FRONT
+// ===============================
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "web/html/catalogo_cliente.html"));
+});
+
+app.get("/cliente/catalogo", (req, res) => {
+  res.sendFile(path.join(__dirname, "web/html/catalogo_cliente.html"));
+});
+
+app.get("/admin/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "web/html/login.html"));
+});
+
 // Archivos estáticos (frontend)
 app.use(express.static(path.join(__dirname, "web")));
 
@@ -65,17 +80,6 @@ app.use("/api/productos", require("./api/routes/producto.routes"));
 app.use("/api/solicitudes-compra", require("./api/routes/solicitudCompra.routes"));
 app.use("/api/mercado-publico", require("./api/routes/mercadoPublico.routes"));
 
-
-// ===============================
-// Rutas del FRONT
-// ===============================
-app.get("/cliente/catalogo", (req, res) => {
-  res.sendFile(path.join(__dirname, "web/html/catalogo_cliente.html"));
-});
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "web/html/login.html"));
-});
 
 // ===============================
 // Errores

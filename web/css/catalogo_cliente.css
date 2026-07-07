@@ -618,3 +618,98 @@ body {
 .oportunidad-card a:hover {
   background: #0076a3;
 }
+
+/* Ajustes entrada publica, carrito y ofertas */
+.navbar-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.admin-login-btn {
+  background: #ffffff;
+  border-radius: 20px;
+  color: #083c6f;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.admin-login-btn:hover {
+  background: #eaf3f8;
+  transform: translateY(-1px);
+}
+
+.cart {
+  border: none;
+}
+
+.product-card .precio-oferta {
+  margin-bottom: 0;
+}
+
+.precio-original {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin: 0;
+  text-decoration: line-through;
+}
+
+.oferta-cliente {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  color: #92400e;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  margin: 6px 0;
+  padding: 6px 9px;
+}
+
+.catalogo-message {
+  color: #64748b;
+  font-weight: 600;
+  grid-column: 1 / -1;
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.catalogo-message.error {
+  color: #b91c1c;
+}
+
+.cart-item .detalle .sku,
+.cart-item .detalle .precio-unitario {
+  color: #64748b;
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+
+.cart-empty {
+  color: #64748b;
+  font-weight: 600;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .navbar-actions {
+    width: 100%;
+  }
+
+  .admin-login-btn,
+  .cart {
+    flex: 1;
+    justify-content: center;
+  }
+}

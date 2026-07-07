@@ -79,3 +79,11 @@ Bitacora append-only del trabajo por fases.
 **Edge cases cubiertos:** SKU ausente, nulo o vacio; ruta de normalizacion ubicada antes de `/:id`; oferta vencida o futura no aparece como activa; descuento por monto o porcentaje; precio cero sin division invalida; producto inactivo con `activo` boolean o `estado` legado.
 **Pruebas:** `node --check api/controllers/producto.controller.js`, `node --check api/routes/producto.routes.js`, `node --check web/js/catalogo_admin.js` ejecutados correctamente.
 **Pendiente / deuda tecnica:** Verificar visualmente en navegador con sesion admin y datos reales de oferta.
+
+## [2026-07-07] Fase 6 - Catalogo cliente como entrada publica y carrito
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `server.js` (rutas frontend publicas antes de `express.static`: raiz `/` sirve catalogo cliente y `/admin/login` sirve login admin), `web/html/catalogo_cliente.html` (boton Admin junto al carrito), `web/js/catalogo_cliente.js` (carga publica, identificadores `_id`, carrito, cantidades, subtotales, total y exportacion Excel), `web/css/catalogo_cliente.css` (estilos de boton Admin, ofertas, estados y carrito).
+**Decisiones tecnicas:** El catalogo cliente queda como puerta de entrada publica. El carrito usa `_id` de Mongo como identificador real y guarda un snapshot de nombre, SKU, precio unitario, precio original y oferta vigente al agregar productos. La exportacion Excel incluye SKU, producto, cantidad, precio unitario, porcentaje de oferta y subtotal.
+**Edge cases cubiertos:** Productos sin imagen, productos sin SKU, carrito vacio al exportar, librerias Excel no cargadas, productos con oferta activa, filtros sin region seleccionada, cantidades que llegan a cero.
+**Pruebas:** `node --check server.js` y `node --check web/js/catalogo_cliente.js` ejecutados correctamente. Verificacion HTTP local: `/` devuelve el catalogo cliente, `/admin/login` devuelve el login y `/api/productos` devuelve 90 productos.
+**Pendiente / deuda tecnica:** Verificar manualmente en navegador la descarga del Excel porque depende de las librerias CDN cargadas en cliente.

@@ -16,9 +16,13 @@
       <span>Comercial Brich</span>
     </div>
 
-    <!-- 🔹 Carrito -->
-    <div class="cart" id="cartBtn">
-      <span id="cartCount">0</span> 🛒 Carrito
+    <div class="navbar-actions">
+      <a class="admin-login-btn" href="/admin/login">Admin</a>
+
+      <!-- 🔹 Carrito -->
+      <button class="cart" id="cartBtn" type="button">
+        <span id="cartCount">0</span> Carrito
+      </button>
     </div>
   </header>
 
@@ -57,7 +61,7 @@
 <div id="cartModal" class="modal">
   <div class="modal-content">
     <span class="close" id="closeCart">&times;</span>
-    <h2>🛒 Carrito de Compras</h2>
+    <h2>Carrito de Compras</h2>
 
     <div id="cartItems"></div>
     <p id="cartTotal"><strong>Total:</strong> $0</p>
