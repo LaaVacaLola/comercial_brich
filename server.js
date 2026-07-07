@@ -90,8 +90,11 @@ app.use((req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
   console.error("Error interno:", err.message);
-  res.status(500).json({ message: "Error interno del servidor" });
+  res.status(status).json({
+    message: status === 500 ? "Error interno del servidor" : err.message,
+  });
 });
 
 // ===============================

@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let analisisGuardados = [];
   let ordenesPage = 1;
   let analisisPage = 1;
+  let ultimoJobId = null;
 
   if (!MP.getTokenOrRedirect()) return;
 
@@ -265,8 +266,34 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function autoSeleccionarEntidadInicial() {
+    if (entidadesSeleccionadas.length) return;
+
+    if (modoActual === "proveedores" && proveedores.length === 0 && clientes.length > 0) {
+      setModoAnalisis("clientes");
+      MP.setMessage("No hay proveedores guardados. Se cargara analitica de clientes observados.");
+    }
+
+    const disponibles = entidadesDisponibles().filter((item) => item.codigo);
+    if (!disponibles.length) {
+      MP.setMessage(
+        modoActual === "clientes"
+          ? "No hay clientes observados para generar reportes."
+          : "No hay proveedores guardados para generar reportes.",
+        true
+      );
+      return;
+    }
+
+    entidadesSeleccionadas = [disponibles[0]];
+    renderEntidadSelector();
+    renderEntidadesSeleccionadas();
+    scheduleAnalisis();
+  }
+
   function limpiarResultado() {
     ultimoResultado = null;
+    ultimoJobId = null;
     document.getElementById("guardarAnalisisBtn").disabled = true;
     renderReport({ resumen: {}, ordenes: [], topProductosComprados: [], topProveedores: [], topClientesCompradores: [] }, [], modoActual);
     renderProgress({}, "idle");
@@ -287,15 +314,17 @@ document.addEventListener("DOMContentLoaded", () => {
   async function cargarSelectores() {
     try {
       const [proveedoresData, clientesData] = await Promise.all([
-        MP.request("/proveedores-guardados", { silent: true }),
-        MP.request("/clientes-observados", { silent: true }),
+        MP.request("/proveedores-guardados"),
+        MP.request("/clientes-observados"),
       ]);
 
       proveedores = MP.getListado(proveedoresData);
       clientes = MP.getListado(clientesData);
       renderEntidadSelector();
       renderEntidadesSeleccionadas();
+      autoSeleccionarEntidadInicial();
     } catch (err) {
+      MP.setMessage(`No fue posible cargar entidades guardadas: ${err.message}`, true);
       renderEntidadSelector();
       renderEntidadesSeleccionadas();
     }
@@ -385,11 +414,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!tbody) return;
 
     try {
-      const data = await MP.request("/reportes/guardados", { silent: true });
+      const data = await MP.request("/reportes/guardados");
       analisisGuardados = MP.getListado(data);
       analisisPage = 1;
       renderAnalisisGuardadosPage();
     } catch (err) {
+      MP.setMessage(`No fue posible cargar analisis guardados: ${err.message}`, true);
       MP.renderEmpty(tbody, 5, "No fue posible cargar analisis guardados.");
     }
   }
@@ -524,6 +554,7 @@ document.addEventListener("DOMContentLoaded", () => {
     clearTimeout(debounceTimer);
     document.getElementById("guardarAnalisisBtn").disabled = true;
     ultimoResultado = null;
+    ultimoJobId = null;
 
     if (!entidadesSeleccionadas.length) {
       limpiarResultado();
@@ -559,10 +590,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!data || runId !== analysisRunId) return;
       ultimoResultado = data;
+      ultimoJobId = job.id;
       renderReport(data, entidadesSeleccionadas, modoActual);
       document.getElementById("guardarAnalisisBtn").disabled = false;
     } catch (err) {
       renderProgress({}, "idle");
+      MP.setMessage(`No fue posible generar analitica: ${err.message}`, true);
     }
   }
 
@@ -573,11 +606,11 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       await MP.request("/reportes/guardados", {
         method: "POST",
-        body: { resultado: ultimoResultado },
-        silent: true,
+        body: ultimoJobId ? { jobId: ultimoJobId } : { resultado: ultimoResultado },
       });
       await cargarAnalisisGuardados();
     } catch (err) {
+      MP.setMessage(`No fue posible guardar analisis: ${err.message}`, true);
       button.disabled = false;
     }
   }

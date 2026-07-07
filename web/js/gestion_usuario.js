@@ -1,5 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
   const API = "/api/usuarios";
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    alert("Debes iniciar sesion primero.");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const headersJson = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + token,
+  };
 
   const usuariosTable = document.getElementById("usuariosTable");
   const formCrear = document.getElementById("crearUsuarioForm");
@@ -56,12 +68,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  async function request(url, options = {}) {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        ...headersJson,
+        ...(options.headers || {}),
+      },
+    });
+
+    if (res.status === 401) {
+      localStorage.removeItem("token");
+      await showAlert("Sesion expirada o no autorizada. Inicia sesion nuevamente.");
+      window.location.href = "login.html";
+      throw new Error("No autorizado");
+    }
+
+    return res;
+  }
+
   // ============================
   // Obtener usuarios
   // ============================
   async function fetchUsuarios() {
     try {
-      const res = await fetch(API);
+      const res = await request(API);
       if (!res.ok) throw new Error("No se pudo obtener usuarios");
       const datos = await res.json();
       renderUsuarios(datos);
@@ -110,9 +141,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const res = await fetch(API, {
+      const res = await request(API, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(nuevo)
       });
 
@@ -139,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const ok = await showConfirm("¿Eliminar este usuario?");
       if (!ok) return;
 
-      const res = await fetch(`${API}/${id}`, {
+      const res = await request(`${API}/${id}`, {
         method: "DELETE"
       });
 
@@ -154,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.classList.contains("btn-warning")) {
       usuarioEditando = id;
 
-      const res = await fetch(`${API}/${id}`);
+      const res = await request(`${API}/${id}`);
       if (!res.ok) return showError(res);
 
       const u = await res.json();
@@ -182,9 +212,8 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      const res = await fetch(`${API}/${usuarioEditando}`, {
+      const res = await request(`${API}/${usuarioEditando}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(update)
       });
 

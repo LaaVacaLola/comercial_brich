@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva Solicitud de Compra</title>
+  <link rel="stylesheet" href="../css/admin_nav.css">
+  <link rel="stylesheet" href="../css/solicitudes_compra.css">
+  <script defer src="../js/admin_nav.js"></script>
+  <script defer src="../js/solicitud_compra_nueva.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="solicitudes_compra.html" class="btn-back">Volver a solicitudes</a>
+  </header>
+
+  <main class="page-shell oc-create-shell">
+    <section class="page-header">
+      <div>
+        <h1>Nueva OC</h1>
+        <p>Selecciona cliente, agrega productos y guarda la cotizacion.</p>
+      </div>
+      <button id="btnGuardarSolicitud" type="button" class="btn-primary">Guardar OC</button>
+    </section>
+
+    <section class="oc-create-layout">
+      <aside class="panel products-sidebar">
+        <div class="panel-header">
+          <h2>Productos</h2>
+        </div>
+        <input id="buscarProducto" type="search" placeholder="Buscar por SKU, nombre o categoria">
+        <div id="productosList" class="products-list"></div>
+      </aside>
+
+      <section class="editor">
+        <form id="solicitudForm" class="panel form-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Datos de la OC</h2>
+              <p id="folioLabel">Folio pendiente</p>
+            </div>
+            <span id="estadoBadge" class="badge">Borrador</span>
+          </div>
+
+          <input id="clienteId" type="hidden">
+
+          <div class="selected-client">
+            <div>
+              <span>Cliente seleccionado</span>
+              <strong id="clienteSeleccionadoNombre">Sin cliente</strong>
+              <small id="clienteSeleccionadoDetalle">Selecciona un cliente para continuar.</small>
+            </div>
+            <button id="btnSeleccionarCliente" type="button" class="btn-secondary">Seleccionar cliente</button>
+          </div>
+
+          <div class="form-grid">
+            <label>Validez dias<input id="validezDias" type="number" min="1" step="1" value="15" required></label>
+          </div>
+
+          <label>Observaciones<textarea id="observaciones" rows="3"></textarea></label>
+          <div id="formStatus" class="status-line"></div>
+        </form>
+
+        <section class="panel items-panel">
+          <div class="panel-header">
+            <h2>Items agregados</h2>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Producto</th>
+                  <th>Precio neto</th>
+                  <th>Cantidad</th>
+                  <th>Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="itemsTable"></tbody>
+            </table>
+          </div>
+
+          <div class="totals">
+            <div><span>Neto</span><strong id="totalNeto">$0</strong></div>
+            <div><span>IVA 19%</span><strong id="totalIva">$0</strong></div>
+            <div><span>Total</span><strong id="totalGeneral">$0</strong></div>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <div id="seleccionarClienteModal" class="modal">
+    <div class="modal-content modal-content-wide">
+      <button id="cerrarSeleccionClienteModal" class="modal-close" type="button" aria-label="Cerrar">&times;</button>
+      <div class="panel-header">
+        <div>
+          <h2>Seleccionar cliente</h2>
+          <p>Busca y selecciona el cliente para esta OC.</p>
+        </div>
+        <button id="btnNuevoCliente" type="button" class="btn-primary">Nuevo cliente</button>
+      </div>
+      <input id="buscarCliente" type="search" placeholder="Buscar por razon social, RUT o contacto">
+      <div id="clientesList" class="client-select-list"></div>
+    </div>
+  </div>
+
+  <div id="clienteFormModal" class="modal">
+    <div class="modal-content">
+      <button id="cerrarClienteFormModal" class="modal-close" type="button" aria-label="Cerrar">&times;</button>
+      <h2 id="clienteModalTitle">Nuevo cliente</h2>
+      <form id="clienteForm">
+        <input id="clienteFormId" type="hidden">
+        <div class="form-grid">
+          <label>Razon social<input id="clienteFormRazonSocial" type="text" required></label>
+          <label>RUT<input id="clienteFormRut" type="text" required></label>
+          <label>Email<input id="clienteFormEmail" type="email" required></label>
+          <label>Telefono<input id="clienteFormTelefono" type="text" required></label>
+          <label>Nombre de contacto<input id="clienteFormContacto" type="text" required></label>
+          <label>Activo
+            <select id="clienteFormActivo">
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </label>
+        </div>
+        <label>Direccion<input id="clienteFormDireccion" type="text" required></label>
+        <div id="clienteModalStatus" class="status-line"></div>
+        <button id="btnGuardarCliente" type="submit" class="btn-primary">Guardar cliente</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="solicitudCreadaModal" class="modal">
+    <div class="modal-content modal-content-wide">
+      <button id="cerrarSolicitudCreadaModal" class="modal-close" type="button" aria-label="Cerrar">&times;</button>
+      <h2 id="solicitudCreadaTitle">OC creada</h2>
+      <div id="solicitudCreadaBody" class="modal-detail"></div>
+      <div class="actions-row modal-actions">
+        <a href="solicitudes_compra.html" class="btn-secondary link-button">Volver al listado</a>
+        <button id="btnNuevaOcLimpia" type="button" class="btn-primary">Crear otra OC</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

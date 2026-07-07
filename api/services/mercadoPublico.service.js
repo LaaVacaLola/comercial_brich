@@ -1612,7 +1612,23 @@ async function obtenerReportesOrdenesSeleccionadas(query = {}, progress) {
 }
 
 async function guardarAnalisisGenerado(payload = {}, solicitadoPor) {
-  const resultado = payload.resultado || payload;
+  let resultado = payload.resultado || payload;
+
+  if (payload.jobId) {
+    const job = reportJobs.get(String(payload.jobId));
+    if (!job) {
+      const err = new Error("Trabajo de analitica no encontrado para guardar");
+      err.status = 404;
+      throw err;
+    }
+    if (job.status !== "complete" || !job.result) {
+      const err = new Error("La analitica aun no esta lista para guardar");
+      err.status = 409;
+      throw err;
+    }
+    resultado = job.result;
+  }
+
   const modoAnalisis = resultado?.filtros?.modoAnalisis === "clientes" ? "clientes" : "proveedores";
 
   if (!resultado?.resumen || !resultado?.filtros) {
@@ -1621,11 +1637,24 @@ async function guardarAnalisisGenerado(payload = {}, solicitadoPor) {
     throw err;
   }
 
+  const resultadoGuardado = {
+    modo: resultado.modo,
+    filtros: resultado.filtros,
+    resumen: resultado.resumen,
+    topProductosComprados: resultado.topProductosComprados || [],
+    topClientesCompradores: resultado.topClientesCompradores || [],
+    topProveedores: resultado.topProveedores || [],
+    porEstado: resultado.porEstado || [],
+    porFecha: resultado.porFecha || [],
+    fuente: resultado.fuente,
+    message: resultado.message,
+  };
+
   const saved = await MercadoPublicoAnalisis.create({
     modoAnalisis,
     filtros: resultado.filtros,
     resumen: resultado.resumen,
-    resultado,
+    resultado: resultadoGuardado,
     solicitadoPor: solicitadoPor || payload.solicitadoPor || null,
   });
 

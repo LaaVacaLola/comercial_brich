@@ -547,3 +547,142 @@ th {
     padding: 0;
   }
 }
+
+/* Flujo OC: listado y pagina de creacion */
+.header-actions,
+.list-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.list-toolbar {
+  margin-bottom: 16px;
+}
+
+.list-toolbar input {
+  min-width: 260px;
+}
+
+.list-toolbar select {
+  max-width: 220px;
+}
+
+.link-button {
+  display: inline-flex;
+  text-decoration: none;
+}
+
+.oc-create-shell {
+  max-width: 1600px;
+}
+
+.oc-create-layout {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 360px minmax(0, 1fr);
+}
+
+.products-sidebar {
+  align-self: start;
+  max-height: calc(100vh - 150px);
+  overflow: auto;
+  position: sticky;
+  top: 16px;
+}
+
+.products-list,
+.client-select-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.product-pick-card,
+.client-select-card {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.client-select-card {
+  cursor: pointer;
+}
+
+.client-select-card:hover,
+.product-pick-card:hover {
+  border-color: #2563eb;
+}
+
+.product-pick-card strong,
+.product-pick-card span,
+.client-select-card strong,
+.client-select-card span {
+  display: block;
+}
+
+.product-pick-card span,
+.client-select-card span {
+  color: #64748b;
+  font-size: 0.82rem;
+  margin-top: 3px;
+}
+
+.selected-client {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 14px;
+}
+
+.selected-client span,
+.selected-client small,
+.selected-client strong {
+  display: block;
+}
+
+.selected-client span {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.selected-client strong {
+  color: #0f172a;
+  margin-top: 3px;
+}
+
+.selected-client small {
+  color: #64748b;
+  margin-top: 4px;
+}
+
+@media (max-width: 980px) {
+  .oc-create-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .products-sidebar {
+    max-height: none;
+    position: static;
+  }
+
+  .selected-client {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+}

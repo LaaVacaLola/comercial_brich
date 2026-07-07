@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitudes de Compra</title>
+  <link rel="stylesheet" href="../css/admin_nav.css">
+  <link rel="stylesheet" href="../css/solicitudes_compra.css">
+  <script defer src="../js/admin_nav.js"></script>
+  <script defer src="../js/solicitudes_compra.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="logo">
+      <img src="../img/logo.png" alt="Logo Comercial Brich">
+      <span>Comercial Brich</span>
+    </div>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
+  </header>
+
+  <main class="page-shell">
+    <section class="page-header">
+      <div>
+        <h1>Solicitudes de compra</h1>
+        <p>Listado de cotizaciones internas y gestion de clientes.</p>
+      </div>
+      <div class="header-actions">
+        <button id="btnCrearOc" type="button" class="btn-primary">Crear OC</button>
+        <button id="btnGestionarClientes" type="button" class="btn-secondary">Gestionar clientes</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="list-toolbar">
+        <input id="buscarSolicitud" type="search" placeholder="Buscar folio, cliente o RUT">
+        <select id="filtroEstado">
+          <option value="">Todos los estados</option>
+          <option value="borrador">Borrador</option>
+          <option value="enviada">Enviada</option>
+          <option value="aceptada">Aceptada</option>
+          <option value="rechazada">Rechazada</option>
+          <option value="vencida">Vencida</option>
+        </select>
+        <button id="btnRecargar" type="button" class="btn-secondary">Recargar</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Cliente</th>
+              <th>RUT</th>
+              <th>Estado</th>
+              <th>Total</th>
+              <th>Fecha</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="solicitudesTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="solicitudModal" class="modal">
+    <div class="modal-content modal-content-wide">
+      <button id="cerrarSolicitudModal" class="modal-close" type="button" aria-label="Cerrar">&times;</button>
+      <div class="panel-header">
+        <div>
+          <h2 id="solicitudModalTitle">Cotizacion</h2>
+          <p id="solicitudModalCliente"></p>
+        </div>
+        <span id="solicitudModalEstado" class="badge">Borrador</span>
+      </div>
+      <div id="solicitudModalBody" class="modal-detail"></div>
+      <div class="actions-row modal-actions">
+        <button id="modalEnviarSolicitud" type="button" class="btn-secondary">Marcar enviada</button>
+        <button id="modalAceptarSolicitud" type="button" class="btn-secondary">Aceptar</button>
+        <button id="modalRechazarSolicitud" type="button" class="btn-secondary">Rechazar</button>
+        <button id="modalVencerSolicitud" type="button" class="btn-secondary">Vencer</button>
+        <button id="modalImprimirSolicitud" type="button" class="btn-secondary">Imprimir</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="clientesModal" class="modal">
+    <div class="modal-content modal-content-wide">
+      <button id="cerrarClientesModal" class="modal-close" type="button" aria-label="Cerrar">&times;</button>
+      <div class="panel-header">
+        <div>
+          <h2>Clientes</h2>
+          <p>Crear y editar clientes internos para cotizaciones.</p>
+        </div>
+        <button id="btnNuevoCliente" type="button" class="btn-primary">Nuevo cliente</button>
+      </div>
+      <input id="buscarClienteGestion" type="search" placeholder="Buscar cliente por razon social, RUT o contacto">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Razon social</th>
+              <th>RUT</th>
+              <th>Contacto</th>
+              <th>Email</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="clientesTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="clienteFormModal" class="modal">
+    <div class="modal-content">
+      <button id="cerrarClienteFormModal" class="modal-close" type="button" aria-label="Cerrar">&times;</button>
+      <h2 id="clienteModalTitle">Nuevo cliente</h2>
+      <form id="clienteForm">
+        <input id="clienteFormId" type="hidden">
+        <div class="form-grid">
+          <label>Razon social<input id="clienteFormRazonSocial" type="text" required></label>
+          <label>RUT<input id="clienteFormRut" type="text" required></label>
+          <label>Email<input id="clienteFormEmail" type="email" required></label>
+          <label>Telefono<input id="clienteFormTelefono" type="text" required></label>
+          <label>Nombre de contacto<input id="clienteFormContacto" type="text" required></label>
+          <label>Activo
+            <select id="clienteFormActivo">
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </label>
+        </div>
+        <label>Direccion<input id="clienteFormDireccion" type="text" required></label>
+        <div id="clienteModalStatus" class="status-line"></div>
+        <button id="btnGuardarCliente" type="submit" class="btn-primary">Guardar cliente</button>
+      </form>
+    </div>
+  </div>
+
+  <section id="printArea" class="print-area"></section>
+</body>
+</html>

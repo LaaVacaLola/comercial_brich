@@ -103,3 +103,35 @@ Bitacora append-only del trabajo por fases.
 **Edge cases cubiertos:** Cliente faltante al crear cotizacion, RUT duplicado, cliente recien creado seleccionado automaticamente, edicion de cliente seleccionado, cotizaciones existentes con snapshot sin cliente interno asociado, botones de estado deshabilitados segun transicion permitida.
 **Pruebas:** `node --check api/models/Cliente.js`, `node --check api/controllers/cliente.controller.js`, `node --check api/routes/cliente.routes.js`, `node --check web/js/solicitudes_compra.js` y `node --check server.js` ejecutados correctamente. Verificacion HTTP local: `/api/clientes` responde `401 AUTH_REQUIRED` sin token, y los HTML/JS servidos incluyen los nuevos controles.
 **Pendiente / deuda tecnica:** Verificar manualmente con sesion admin: crear cliente, editar cliente, crear cotizacion, abrir modal y cambiar estado.
+
+## [2026-07-07] Fase 9 - Rediseño flujo OC y cotizaciones
+**Archivos creados:** `web/html/solicitud_compra_nueva.html`, `web/js/solicitud_compra_nueva.js`.
+**Archivos modificados:** `web/html/solicitudes_compra.html` (solo listado de OC anteriores, modal de detalle y gestion de clientes), `web/js/solicitudes_compra.js` (listado, modal de OC, estados y gestion de clientes), `web/css/solicitudes_compra.css` (layout de listado, pagina de creacion, tarjetas de producto/cliente), `docs/REGISTRO-CAMBIOS.md`.
+**Decisiones tecnicas:** `solicitudes_compra.html` queda como vista de listado y gestion. La creacion se movio a `solicitud_compra_nueva.html`, con formulario a pantalla completa y productos a la izquierda. La seleccion de cliente se hace por modal con buscador/lista. Abrir una OC anterior ya no carga datos en ningun formulario principal; solo abre modal de detalle.
+**Edge cases cubiertos:** Crear OC sin cliente, crear OC sin productos, agregar varias unidades del mismo producto, editar cantidades antes de guardar, cliente recien creado seleccionado automaticamente, OC anteriores con transiciones de estado restringidas por boton.
+**Pruebas:** `node --check web/js/solicitudes_compra.js`, `node --check web/js/solicitud_compra_nueva.js` y `node --check server.js` ejecutados correctamente. Verificacion HTTP local: listado sin `solicitudForm`, pagina nueva con `solicitudForm`, y JS servidos con endpoints esperados.
+**Pendiente / deuda tecnica:** Verificar manualmente con sesion admin el flujo completo de crear OC y cambiar estados.
+
+## [2026-07-07] Fase 10 - Autenticacion en gestion de usuarios
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/js/gestion_usuario.js` (lectura de token, headers `Authorization: Bearer`, helper `request` y manejo de 401).
+**Decisiones tecnicas:** La API `/api/usuarios` ya estaba protegida con `auth + adminAuth`; el problema estaba en el frontend, que llamaba GET/POST/PUT/DELETE sin token. Se centralizo el uso de headers autenticados para todas las llamadas.
+**Edge cases cubiertos:** Token ausente al entrar a la pagina, token expirado/invalido durante una llamada, operaciones de listar/crear/editar/eliminar sin repetir headers manuales.
+**Pruebas:** `node --check web/js/gestion_usuario.js` ejecutado correctamente. Verificacion HTTP local: `/api/usuarios` responde `401 AUTH_REQUIRED` sin token y el JS servido contiene `Authorization`, `Bearer` y mensaje de sesion expirada.
+**Pendiente / deuda tecnica:** Si el navegador conserva un token expirado, debe iniciar sesion nuevamente; el token actual expira en 1 hora segun `auth.controller.js`.
+
+## [2026-07-07] Fase 11 - Carga inicial de reportes Mercado Publico
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/html/mercado_reportes.html` (mensaje visible de estado), `web/js/mercado_reportes.js` (autoseleccion inicial de entidad, cambio a clientes si no hay proveedores, errores visibles), `web/css/mercado_publico.css` (estilos de `status-message`), `docs/REGISTRO-CAMBIOS.md`.
+**Decisiones tecnicas:** El backend de reportes funcionaba; la pantalla iniciaba en modo proveedores, pero no habia proveedores guardados. Como existen clientes observados, la UI cambia automaticamente a modo clientes, selecciona el primer cliente disponible y genera la analitica. Se dejo de ocultar errores clave con `silent: true` en carga inicial y guardado.
+**Edge cases cubiertos:** Cero proveedores guardados, clientes observados disponibles, ausencia total de entidades guardadas, errores al cargar selectores/analisis guardados, error al generar o guardar analitica.
+**Pruebas:** `node --check web/js/mercado_reportes.js`, `node --check web/js/mercado_common.js`, `node --check api/controllers/mercadoPublico.controller.js`, `node --check api/routes/mercadoPublico.routes.js` ejecutados correctamente. Verificacion HTTP local: endpoints de reportes responden, hay 0 proveedores guardados, 3 clientes observados, 18 analisis guardados y un job de clientes completo con 808 OC.
+**Pendiente / deuda tecnica:** El mensaje `Unchecked runtime.lastError` proviene normalmente de extensiones del navegador; si persiste, probar en ventana incognito sin extensiones para confirmar que no es de la app.
+
+## [2026-07-07] Fase 12 - Guardado de reportes Mercado Publico
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `api/services/mercadoPublico.service.js` (`guardarAnalisisGenerado` acepta `jobId` y persiste resultado compacto), `web/js/mercado_reportes.js` (guarda analisis por `jobId` en vez de enviar todo el resultado), `server.js` (manejador global respeta `err.status`/`err.statusCode`), `docs/REGISTRO-CAMBIOS.md`.
+**Decisiones tecnicas:** El 500 venia de enviar al backend el resultado completo del reporte como JSON; un reporte de cliente con 808 OC pesa cerca de 3.2 MB y superaba el limite por defecto de `express.json()`, por lo que no llegaba al controlador. Se cambio el guardado para enviar solo el `jobId` y recuperar el resultado desde el job en memoria. En Mongo se guarda una version compacta del analisis con filtros, resumen y agregados, sin duplicar todas las OC e items.
+**Edge cases cubiertos:** Job inexistente al guardar (404), job aun no completado (409), resultado invalido sin resumen/filtros (400), payload grande convertido en error HTTP real en vez de 500 generico.
+**Pruebas:** `node --check api/services/mercadoPublico.service.js`, `node --check web/js/mercado_reportes.js` y `node --check server.js` ejecutados correctamente. Verificacion HTTP local: job de clientes con 808 OC completado y `POST /api/mercado-publico/reportes/guardados` con `jobId` responde `201` y `Analisis guardado correctamente`.
+**Pendiente / deuda tecnica:** Si se necesita reabrir un analisis guardado sin regenerarlo, agregar un endpoint de detalle por id que lea el resultado compacto y defina que tablas deben persistirse.
