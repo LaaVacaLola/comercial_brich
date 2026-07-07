@@ -95,3 +95,11 @@ Bitacora append-only del trabajo por fases.
 **Edge cases cubiertos:** Primera visita sin region guardada, region guardada que ya no existe en productos, productos con region vacia, seleccion vacia en modal, cambio de region sin recargar.
 **Pruebas:** `node --check web/js/catalogo_cliente.js` y `node --check server.js` ejecutados correctamente.
 **Pendiente / deuda tecnica:** Verificar manualmente en navegador borrando `localStorage.catalogoRegion` y recargando `/`.
+
+## [2026-07-07] Fase 8 - Clientes seleccionables y modal de cotizacion
+**Archivos creados:** `api/models/Cliente.js`, `api/controllers/cliente.controller.js`, `api/routes/cliente.routes.js`.
+**Archivos modificados:** `server.js` (montaje de `/api/clientes`), `web/html/solicitudes_compra.html` (selector buscable de cliente, modal de cliente y modal de cotizacion), `web/js/solicitudes_compra.js` (carga/filtrado de clientes, crear/editar cliente, seleccion de cliente, modal de detalle y acciones de estado), `web/css/solicitudes_compra.css` (estilos de selector y modales), `docs/REGISTRO-CAMBIOS.md`.
+**Decisiones tecnicas:** Se creo `Cliente` como entidad interna separada de `MercadoPublicoCliente`. `SolicitudCompra` sigue guardando snapshot de cliente para que una cotizacion no cambie si luego se edita el cliente. El modal de cotizacion reutiliza `PATCH /api/solicitudes-compra/:id/estado` para transiciones.
+**Edge cases cubiertos:** Cliente faltante al crear cotizacion, RUT duplicado, cliente recien creado seleccionado automaticamente, edicion de cliente seleccionado, cotizaciones existentes con snapshot sin cliente interno asociado, botones de estado deshabilitados segun transicion permitida.
+**Pruebas:** `node --check api/models/Cliente.js`, `node --check api/controllers/cliente.controller.js`, `node --check api/routes/cliente.routes.js`, `node --check web/js/solicitudes_compra.js` y `node --check server.js` ejecutados correctamente. Verificacion HTTP local: `/api/clientes` responde `401 AUTH_REQUIRED` sin token, y los HTML/JS servidos incluyen los nuevos controles.
+**Pendiente / deuda tecnica:** Verificar manualmente con sesion admin: crear cliente, editar cliente, crear cotizacion, abrir modal y cambiar estado.

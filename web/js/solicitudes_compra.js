@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const API_SOL = "/api/solicitudes-compra";
   const API_PRODUCTOS = "/api/productos";
+  const API_CLIENTES = "/api/clientes";
   const IVA_TASA = 0.19;
   const headersJson = {
     "Content-Type": "application/json",
@@ -32,6 +33,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnVencerSolicitud = document.getElementById("btnVencerSolicitud");
   const btnImprimirSolicitud = document.getElementById("btnImprimirSolicitud");
 
+  const buscarCliente = document.getElementById("buscarCliente");
+  const clienteSelect = document.getElementById("clienteSelect");
+  const btnNuevoCliente = document.getElementById("btnNuevoCliente");
+  const btnEditarCliente = document.getElementById("btnEditarCliente");
   const clienteRazonSocial = document.getElementById("clienteRazonSocial");
   const clienteRut = document.getElementById("clienteRut");
   const clienteEmail = document.getElementById("clienteEmail");
@@ -51,8 +56,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const totalGeneral = document.getElementById("totalGeneral");
   const printArea = document.getElementById("printArea");
 
+  const clienteModal = document.getElementById("clienteModal");
+  const cerrarClienteModal = document.getElementById("cerrarClienteModal");
+  const clienteForm = document.getElementById("clienteForm");
+  const clienteFormId = document.getElementById("clienteFormId");
+  const clienteModalTitle = document.getElementById("clienteModalTitle");
+  const clienteModalStatus = document.getElementById("clienteModalStatus");
+  const clienteFormRazonSocial = document.getElementById("clienteFormRazonSocial");
+  const clienteFormRut = document.getElementById("clienteFormRut");
+  const clienteFormEmail = document.getElementById("clienteFormEmail");
+  const clienteFormTelefono = document.getElementById("clienteFormTelefono");
+  const clienteFormContacto = document.getElementById("clienteFormContacto");
+  const clienteFormDireccion = document.getElementById("clienteFormDireccion");
+  const clienteFormActivo = document.getElementById("clienteFormActivo");
+
+  const solicitudModal = document.getElementById("solicitudModal");
+  const cerrarSolicitudModal = document.getElementById("cerrarSolicitudModal");
+  const solicitudModalTitle = document.getElementById("solicitudModalTitle");
+  const solicitudModalCliente = document.getElementById("solicitudModalCliente");
+  const solicitudModalEstado = document.getElementById("solicitudModalEstado");
+  const solicitudModalBody = document.getElementById("solicitudModalBody");
+  const modalEnviarSolicitud = document.getElementById("modalEnviarSolicitud");
+  const modalAceptarSolicitud = document.getElementById("modalAceptarSolicitud");
+  const modalRechazarSolicitud = document.getElementById("modalRechazarSolicitud");
+  const modalVencerSolicitud = document.getElementById("modalVencerSolicitud");
+  const modalImprimirSolicitud = document.getElementById("modalImprimirSolicitud");
+
   let solicitudes = [];
   let productos = [];
+  let clientes = [];
   let solicitudActual = null;
 
   function money(value) {
@@ -71,6 +103,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function setStatus(message, tipo = "") {
     formStatus.textContent = message || "";
     formStatus.className = `status-line ${tipo}`.trim();
+  }
+
+  function setClienteModalStatus(message, tipo = "") {
+    clienteModalStatus.textContent = message || "";
+    clienteModalStatus.className = `status-line ${tipo}`.trim();
   }
 
   function productoActivo(producto) {
@@ -94,6 +131,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function payloadSolicitud() {
+    if (!clienteSelect.value && !solicitudActual) {
+      throw new Error("Selecciona un cliente antes de guardar la cotizacion.");
+    }
+
     return {
       cliente: {
         razonSocial: clienteRazonSocial.value.trim(),
@@ -112,6 +153,8 @@ document.addEventListener("DOMContentLoaded", () => {
     solicitudActual = null;
     solicitudForm.reset();
     solicitudId.value = "";
+    clienteSelect.value = "";
+    buscarCliente.value = "";
     validezDias.value = 15;
     formTitle.textContent = "Nueva cotizacion";
     folioLabel.textContent = "Folio pendiente";
@@ -120,6 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderItems();
     renderPrintArea();
     marcarSolicitudActiva();
+    renderClientes();
   }
 
   function setEstadoBadge(estado = "borrador") {
@@ -140,6 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
     clienteTelefono.value = solicitud.cliente?.telefono || "";
     clienteContacto.value = solicitud.cliente?.nombreContacto || "";
     clienteDireccion.value = solicitud.cliente?.direccion || "";
+    seleccionarClientePorSnapshot(solicitud.cliente);
     validezDias.value = solicitud.validezDias || 15;
     observaciones.value = solicitud.observaciones || "";
     setStatus("");
@@ -178,7 +223,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>${escapeHtml(sol.cliente?.razonSocial || "")}</span>
         <span>${escapeHtml(sol.estado)} - ${money(sol.total)}</span>
       `;
-      button.addEventListener("click", () => cargarSolicitud(sol._id));
+      button.addEventListener("click", async () => {
+        const solicitud = await cargarSolicitud(sol._id);
+        if (solicitud) abrirSolicitudModal(solicitud);
+      });
       solicitudesList.appendChild(button);
     });
 
@@ -211,6 +259,55 @@ document.addEventListener("DOMContentLoaded", () => {
       option.textContent = `${p.sku || "Sin SKU"} - ${p.nombre} (${money(p.precio)})`;
       productoSelect.appendChild(option);
     });
+  }
+
+  function clienteTexto(cliente) {
+    return `${cliente.razonSocial || ""} ${cliente.rut || ""} ${cliente.nombreContacto || ""} ${cliente.email || ""}`.toLowerCase();
+  }
+
+  function renderClientes() {
+    const selected = clienteSelect.value;
+    const texto = buscarCliente.value.trim().toLowerCase();
+    const disponibles = clientes.filter((cliente) => !texto || clienteTexto(cliente).includes(texto));
+    clienteSelect.innerHTML = `<option value="">Seleccionar cliente</option>`;
+
+    disponibles.forEach((cliente) => {
+      const option = document.createElement("option");
+      option.value = cliente._id;
+      option.textContent = `${cliente.razonSocial} - ${cliente.rut}`;
+      clienteSelect.appendChild(option);
+    });
+
+    if (selected && clientes.some((cliente) => cliente._id === selected)) {
+      clienteSelect.value = selected;
+    }
+
+    btnEditarCliente.disabled = !clienteSelect.value;
+  }
+
+  function llenarDatosCliente(cliente = {}) {
+    clienteRazonSocial.value = cliente.razonSocial || "";
+    clienteRut.value = cliente.rut || "";
+    clienteEmail.value = cliente.email || "";
+    clienteTelefono.value = cliente.telefono || "";
+    clienteContacto.value = cliente.nombreContacto || "";
+    clienteDireccion.value = cliente.direccion || "";
+  }
+
+  function seleccionarCliente(id) {
+    const cliente = clientes.find((item) => item._id === id);
+    clienteSelect.value = cliente?._id || "";
+    llenarDatosCliente(cliente || {});
+    btnEditarCliente.disabled = !cliente;
+  }
+
+  function seleccionarClientePorSnapshot(clienteSnapshot = {}) {
+    const cliente = clientes.find((item) => item.rut === clienteSnapshot?.rut);
+    clienteSelect.value = cliente?._id || "";
+    buscarCliente.value = "";
+    renderClientes();
+    if (cliente) clienteSelect.value = cliente._id;
+    btnEditarCliente.disabled = !clienteSelect.value;
   }
 
   function renderItems() {
@@ -348,12 +445,19 @@ document.addEventListener("DOMContentLoaded", () => {
     renderProductos();
   }
 
+  async function cargarClientes() {
+    clientes = await requestJson(API_CLIENTES);
+    renderClientes();
+  }
+
   async function cargarSolicitud(id) {
     try {
       const solicitud = await requestJson(`${API_SOL}/${id}`);
       poblarFormulario(solicitud);
+      return solicitud;
     } catch (err) {
       setStatus(err.message, "error");
+      return null;
     }
   }
 
@@ -372,6 +476,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setStatus(id ? "Cotizacion actualizada." : `Cotizacion creada: ${solicitud.folio}.`, "success");
       poblarFormulario(solicitud);
       await cargarSolicitudes();
+      abrirSolicitudModal(solicitud);
     } catch (err) {
       setStatus(err.message, "error");
     } finally {
@@ -456,9 +561,129 @@ document.addEventListener("DOMContentLoaded", () => {
       setStatus(`Cotizacion marcada como ${estado}.`, "success");
       poblarFormulario(solicitud);
       await cargarSolicitudes();
+      if (solicitudModal.style.display === "flex") abrirSolicitudModal(solicitud);
     } catch (err) {
       setStatus(err.message, "error");
     }
+  }
+
+  function abrirClienteModal(cliente = null) {
+    clienteForm.reset();
+    setClienteModalStatus("");
+    clienteFormId.value = cliente?._id || "";
+    clienteModalTitle.textContent = cliente ? "Editar cliente" : "Nuevo cliente";
+    clienteFormRazonSocial.value = cliente?.razonSocial || "";
+    clienteFormRut.value = cliente?.rut || "";
+    clienteFormEmail.value = cliente?.email || "";
+    clienteFormTelefono.value = cliente?.telefono || "";
+    clienteFormContacto.value = cliente?.nombreContacto || "";
+    clienteFormDireccion.value = cliente?.direccion || "";
+    clienteFormActivo.value = cliente?.activo === false ? "false" : "true";
+    clienteModal.style.display = "flex";
+    clienteFormRazonSocial.focus();
+  }
+
+  function cerrarModalCliente() {
+    clienteModal.style.display = "none";
+  }
+
+  function payloadCliente() {
+    return {
+      razonSocial: clienteFormRazonSocial.value.trim(),
+      rut: clienteFormRut.value.trim(),
+      email: clienteFormEmail.value.trim(),
+      telefono: clienteFormTelefono.value.trim(),
+      nombreContacto: clienteFormContacto.value.trim(),
+      direccion: clienteFormDireccion.value.trim(),
+      activo: clienteFormActivo.value === "true",
+    };
+  }
+
+  async function guardarCliente(e) {
+    e.preventDefault();
+    setClienteModalStatus("");
+
+    try {
+      const id = clienteFormId.value;
+      const cliente = await requestJson(id ? `${API_CLIENTES}/${id}` : API_CLIENTES, {
+        method: id ? "PUT" : "POST",
+        body: JSON.stringify(payloadCliente()),
+      });
+      await cargarClientes();
+      buscarCliente.value = "";
+      renderClientes();
+      seleccionarCliente(cliente._id);
+      setClienteModalStatus("Cliente guardado correctamente.", "success");
+      setTimeout(cerrarModalCliente, 350);
+    } catch (err) {
+      setClienteModalStatus(err.message, "error");
+    }
+  }
+
+  function renderSolicitudModal(solicitud) {
+    const items = solicitud.items || [];
+    const rows = items.length
+      ? items.map((item) => `
+          <tr>
+            <td>${escapeHtml(item.sku)}</td>
+            <td>${escapeHtml(item.nombre)}</td>
+            <td>${money(item.precioUnitario)}</td>
+            <td>${item.cantidad}</td>
+            <td>${money(item.subtotal)}</td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="5">Sin items.</td></tr>`;
+
+    solicitudModalTitle.textContent = `Cotizacion ${solicitud.folio || ""}`;
+    solicitudModalCliente.textContent = `${solicitud.cliente?.razonSocial || ""} | ${solicitud.cliente?.rut || ""}`;
+    solicitudModalEstado.textContent = solicitud.estado || "borrador";
+    solicitudModalEstado.className = `badge ${solicitud.estado || "borrador"}`.trim();
+    solicitudModalBody.innerHTML = `
+      <div class="modal-grid">
+        <p><strong>Email</strong><span>${escapeHtml(solicitud.cliente?.email || "")}</span></p>
+        <p><strong>Telefono</strong><span>${escapeHtml(solicitud.cliente?.telefono || "")}</span></p>
+        <p><strong>Contacto</strong><span>${escapeHtml(solicitud.cliente?.nombreContacto || "")}</span></p>
+        <p><strong>Direccion</strong><span>${escapeHtml(solicitud.cliente?.direccion || "")}</span></p>
+        <p><strong>Validez</strong><span>${solicitud.validezDias || 15} dias</span></p>
+        <p><strong>Total</strong><span>${money(solicitud.total)}</span></p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Producto</th>
+              <th>Precio neto</th>
+              <th>Cantidad</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="totals">
+        <div><span>Neto</span><strong>${money(solicitud.neto)}</strong></div>
+        <div><span>IVA 19%</span><strong>${money(solicitud.iva)}</strong></div>
+        <div><span>Total</span><strong>${money(solicitud.total)}</strong></div>
+      </div>
+    `;
+
+    const enviada = solicitud.estado === "enviada";
+    modalEnviarSolicitud.disabled = solicitud.estado !== "borrador";
+    modalAceptarSolicitud.disabled = !enviada;
+    modalRechazarSolicitud.disabled = !enviada;
+    modalVencerSolicitud.disabled = !["borrador", "enviada"].includes(solicitud.estado);
+    modalImprimirSolicitud.disabled = false;
+  }
+
+  function abrirSolicitudModal(solicitud) {
+    solicitudActual = solicitud;
+    renderSolicitudModal(solicitud);
+    solicitudModal.style.display = "flex";
+  }
+
+  function cerrarModalSolicitud() {
+    solicitudModal.style.display = "none";
   }
 
   btnNuevaSolicitud.addEventListener("click", limpiarFormulario);
@@ -466,11 +691,34 @@ document.addEventListener("DOMContentLoaded", () => {
   buscarSolicitud.addEventListener("input", renderSolicitudes);
   filtroEstado.addEventListener("change", renderSolicitudes);
   buscarProducto.addEventListener("input", renderProductos);
+  buscarCliente.addEventListener("input", renderClientes);
+  clienteSelect.addEventListener("change", () => seleccionarCliente(clienteSelect.value));
+  btnNuevoCliente.addEventListener("click", () => abrirClienteModal());
+  btnEditarCliente.addEventListener("click", () => {
+    const cliente = clientes.find((item) => item._id === clienteSelect.value);
+    if (cliente) abrirClienteModal(cliente);
+  });
+  cerrarClienteModal.addEventListener("click", cerrarModalCliente);
+  clienteForm.addEventListener("submit", guardarCliente);
+  cerrarSolicitudModal.addEventListener("click", cerrarModalSolicitud);
+  modalEnviarSolicitud.addEventListener("click", () => cambiarEstado("enviada"));
+  modalAceptarSolicitud.addEventListener("click", () => cambiarEstado("aceptada"));
+  modalRechazarSolicitud.addEventListener("click", () => cambiarEstado("rechazada"));
+  modalVencerSolicitud.addEventListener("click", () => cambiarEstado("vencida"));
+  modalImprimirSolicitud.addEventListener("click", () => {
+    if (!solicitudActual) return;
+    renderPrintArea();
+    window.print();
+  });
+  window.addEventListener("click", (e) => {
+    if (e.target === clienteModal) cerrarModalCliente();
+    if (e.target === solicitudModal) cerrarModalSolicitud();
+  });
 
   async function init() {
     try {
       limpiarFormulario();
-      await Promise.all([cargarSolicitudes(), cargarProductos()]);
+      await Promise.all([cargarSolicitudes(), cargarProductos(), cargarClientes()]);
     } catch (err) {
       setStatus(err.message, "error");
     }
