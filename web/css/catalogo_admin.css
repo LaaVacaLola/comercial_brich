@@ -548,6 +548,54 @@ tbody tr:hover {
   max-width: 260px;
 }
 
+.inactive-flag {
+  background: #dc2626;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 8px;
+  padding: 5px 8px;
+  vertical-align: middle;
+}
+
+.offer-badge {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  color: #92400e;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 7px 10px;
+}
+
+.price-cell {
+  min-width: 120px;
+}
+
+.price-normal,
+.price-offer,
+.price-original {
+  display: block;
+}
+
+.price-offer {
+  color: #166534;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.price-original {
+  color: #94a3b8;
+  font-size: 0.82rem;
+  margin-top: 3px;
+  text-decoration: line-through;
+}
+
 .actions-cell {
   display: flex;
   gap: 8px;

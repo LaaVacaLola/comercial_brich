@@ -6,6 +6,7 @@ const {
   getProductoById,
   createProducto,
   normalizarPreciosProductos,
+  normalizarSkusProductos,
   updateProducto,
   deleteProducto
 } = require("../controllers/producto.controller");
@@ -21,6 +22,7 @@ router.get("/:id", getProductoById);  // SIN AUTH
 // ==============================
 router.post("/", auth, adminAuth, createProducto);
 router.put("/precios/normalizar", auth, adminAuth, normalizarPreciosProductos);
+router.put("/skus/normalizar", auth, adminAuth, normalizarSkusProductos);
 router.put("/:id", auth, adminAuth, updateProducto);
 router.patch("/:id", auth, adminAuth, updateProducto);
 router.delete("/:id", auth, adminAuth, deleteProducto);

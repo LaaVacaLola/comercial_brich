@@ -96,6 +96,7 @@ function normalizarPayloadProducto(body, { parcial = false } = {}) {
   if (body.categoria !== undefined) data.categoria = cleanString(body.categoria);
   if (body.precio !== undefined) data.precio = normalizarPrecio(body.precio);
   if (body.aprobado !== undefined) data.aprobado = parseBoolean(body.aprobado, "Aprobado");
+  if (body.oferta !== undefined) data.oferta = body.oferta;
 
   if (body.activo !== undefined) {
     data.activo = parseBoolean(body.activo, "Activo");
@@ -325,6 +326,48 @@ exports.normalizarPreciosProductos = async (_req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: "Error al normalizar precios", details: err.message });
+  }
+};
+
+exports.normalizarSkusProductos = async (_req, res) => {
+  try {
+    const productos = await Producto.find({
+      $or: [
+        { sku: { $exists: false } },
+        { sku: null },
+        { sku: "" },
+      ],
+    }).select("_id sku nombre").lean();
+
+    let actualizados = 0;
+
+    for (const producto of productos) {
+      const sku = await crearSkuUnico();
+      const result = await Producto.updateOne(
+        {
+          _id: producto._id,
+          $or: [
+            { sku: { $exists: false } },
+            { sku: null },
+            { sku: "" },
+          ],
+        },
+        { $set: { sku } }
+      );
+
+      if (result.modifiedCount > 0) actualizados += 1;
+    }
+
+    res.json({
+      ok: true,
+      message: "SKU normalizados correctamente",
+      total: productos.length,
+      actualizados,
+      sinCambios: productos.length - actualizados,
+    });
+  } catch (err) {
+    const status = err.code === 11000 ? 409 : err.status || 500;
+    res.status(status).json({ error: "Error al normalizar SKU", details: err.message });
   }
 };
 

@@ -68,6 +68,62 @@ document.addEventListener("DOMContentLoaded", () => {
     return producto.estado !== "inactivo";
   }
 
+  function formatCLP(value) {
+    return `$${Number(value || 0).toLocaleString("es-CL")}`;
+  }
+
+  function ofertaActiva(producto) {
+    const oferta = producto.oferta;
+    if (!oferta) return null;
+
+    const inicio = new Date(oferta.fecha_inicio);
+    const fin = new Date(oferta.fecha_termino);
+
+    if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) return null;
+
+    inicio.setHours(0, 0, 0, 0);
+    fin.setHours(23, 59, 59, 999);
+
+    const ahora = new Date();
+    if (ahora < inicio || ahora > fin) return null;
+
+    const precio = Number(producto.precio || 0);
+    const porcentaje = Number(oferta.porcentaje_descuento);
+    const monto = Number(oferta.monto_descuento);
+    const descuento = Number.isFinite(monto) && monto > 0
+      ? monto
+      : (precio * (Number.isFinite(porcentaje) ? porcentaje : 0)) / 100;
+    const precioOferta = Math.max(0, Math.round(precio - descuento));
+    const porcentajeOferta = Number.isFinite(porcentaje) && porcentaje > 0
+      ? porcentaje
+      : precio > 0 ? (descuento / precio) * 100 : 0;
+
+    if (porcentajeOferta <= 0 && descuento <= 0) return null;
+
+    return {
+      porcentaje: Math.round(porcentajeOferta * 100) / 100,
+      precioOferta,
+    };
+  }
+
+  function renderOfertaActiva(producto) {
+    const oferta = ofertaActiva(producto);
+    if (!oferta) return '<span class="muted-cell">Sin oferta</span>';
+    return `<span class="offer-badge">${oferta.porcentaje.toLocaleString("es-CL")}%</span>`;
+  }
+
+  function renderPrecio(producto) {
+    const oferta = ofertaActiva(producto);
+    const precio = Number(producto.precio || 0);
+
+    if (!oferta) return `<span class="price-normal">${formatCLP(precio)}</span>`;
+
+    return `
+      <span class="price-offer">${formatCLP(oferta.precioOferta)}</span>
+      <span class="price-original">${formatCLP(precio)}</span>
+    `;
+  }
+
   function setEstado(message, tipo = "") {
     catalogoEstado.textContent = message || "";
     catalogoEstado.className = `catalogo-estado ${tipo}`.trim();
@@ -97,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setEstado("Cargando productos...");
     tabla.innerHTML = `
       <tr>
-        <td colspan="9">Cargando productos...</td>
+        <td colspan="8">Cargando productos...</td>
       </tr>`;
 
     try {
@@ -106,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) {
         tabla.innerHTML = `
           <tr>
-            <td colspan="9">Error cargando productos (HTTP ${res.status})</td>
+            <td colspan="8">Error cargando productos (HTTP ${res.status})</td>
           </tr>`;
         setEstado("No se pudieron cargar los productos.", "error");
         return;
@@ -119,9 +175,31 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error(err);
       tabla.innerHTML = `
         <tr>
-          <td colspan="9">Error cargando productos</td>
+          <td colspan="8">Error cargando productos</td>
         </tr>`;
       setEstado("Error de conexion al cargar productos.", "error");
+    }
+  }
+
+  async function normalizarSkusAlEntrar() {
+    try {
+      const res = await fetch(`${API}/skus/normalizar`, {
+        method: "PUT",
+        headers: headersJson,
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setEstado(data.details || data.error || `No se pudieron verificar los SKU (HTTP ${res.status})`, "error");
+        return;
+      }
+
+      if (data.actualizados > 0) {
+        setEstado(`${data.actualizados} SKU generados automaticamente.`, "success");
+      }
+    } catch (err) {
+      console.error(err);
+      setEstado("No se pudieron verificar los SKU automaticamente.", "error");
     }
   }
 
@@ -132,7 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (lista.length === 0) {
       tabla.innerHTML = `
         <tr>
-          <td colspan="9">No hay productos para mostrar.</td>
+          <td colspan="8">No hay productos para mostrar.</td>
         </tr>`;
       return;
     }
@@ -152,21 +230,13 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>
           <strong>${escapeHtml(p.nombre)}</strong>
+          ${activo ? "" : '<span class="inactive-flag">Desactivado</span>'}
           <span class="muted-cell">${escapeHtml(p.descripcion || "")}</span>
         </td>
         <td>${escapeHtml(p.categoria || "-")}</td>
         <td>${escapeHtml(p.region || "-")}</td>
-        <td>$${Number(p.precio || 0).toLocaleString("es-CL")}</td>
-        <td>
-          <span class="status ${activo ? "success" : "danger"}">
-            ${activo ? "Activo" : "Inactivo"}
-          </span>
-        </td>
-        <td>
-          <span class="status ${p.aprobado ? "success" : "danger"}">
-            ${p.aprobado ? "Aprobado" : "No aprobado"}
-          </span>
-        </td>
+        <td>${renderOfertaActiva(p)}</td>
+        <td class="price-cell">${renderPrecio(p)}</td>
         <td class="actions-cell">
           <button class="btn-warning btn-editar" data-id="${p._id}" type="button">Editar</button>
           <button class="btn-secondary btn-oferta" data-id="${p._id}" type="button">Oferta</button>
@@ -415,5 +485,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  cargarProductos();
+  (async () => {
+    await normalizarSkusAlEntrar();
+    await cargarProductos();
+  })();
 });

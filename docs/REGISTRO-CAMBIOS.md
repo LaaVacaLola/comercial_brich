@@ -71,3 +71,11 @@ Bitacora append-only del trabajo por fases.
 **Edge cases cubiertos:** Cotizacion sin seleccionar al imprimir/cambiar estado, cotizacion sin items al enviar controlada por API, transiciones invalidas controladas por API, productos filtrados sin resultados, impresion de cotizacion sin items.
 **Pruebas:** `node --check web/js/solicitudes_compra.js`, `node --check api/controllers/solicitudCompra.controller.js`, `node --check api/routes/solicitudCompra.routes.js` ejecutados correctamente. No se ejecuto `npm test` porque el script sigue siendo un placeholder que falla intencionalmente.
 **Pendiente / deuda tecnica:** Verificar visualmente la impresion en navegador con datos reales. Si se requiere descarga PDF, evaluar en una fase posterior el uso de `jspdf` ya presente en `web/libs`.
+
+## [2026-07-07] Fase 4 - Ajustes catalogo admin: SKU, estado y ofertas
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `api/controllers/producto.controller.js` (`normalizarSkusProductos`, persistencia de `oferta` en `updateProducto`), `api/routes/producto.routes.js` (`PUT /skus/normalizar`), `web/html/catalogo_admin.html` (columnas de tabla), `web/js/catalogo_admin.js` (normalizacion de SKU al entrar, render de oferta activa, precio con descuento y bandera de inactivo), `web/css/catalogo_admin.css` (estilos de bandera, oferta y precios).
+**Decisiones tecnicas:** Se agrego un endpoint admin protegido para generar SKU faltantes al entrar al catalogo, reutilizando el generador existente `SKU-YYYYMMDD-0001`. La tabla ya no muestra columnas `Activo` ni `Aprobado`; el estado inactivo se muestra como bandera roja junto al nombre. La oferta activa se calcula en frontend usando el rango `fecha_inicio`/`fecha_termino` y muestra porcentaje y precio ofertado.
+**Edge cases cubiertos:** SKU ausente, nulo o vacio; ruta de normalizacion ubicada antes de `/:id`; oferta vencida o futura no aparece como activa; descuento por monto o porcentaje; precio cero sin division invalida; producto inactivo con `activo` boolean o `estado` legado.
+**Pruebas:** `node --check api/controllers/producto.controller.js`, `node --check api/routes/producto.routes.js`, `node --check web/js/catalogo_admin.js` ejecutados correctamente.
+**Pendiente / deuda tecnica:** Verificar visualmente en navegador con sesion admin y datos reales de oferta.
