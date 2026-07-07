@@ -3,116 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reportes de Ventas (Administrador)</title>
+  <title>Reportes de Solicitudes de Compra</title>
   <link rel="stylesheet" href="../css/reportes_admin.css">
   <link rel="stylesheet" href="../css/admin_nav.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="../libs/chart.umd.min.js"></script>
+  <script src="../libs/xlsx.full.min.js"></script>
+  <script src="../libs/jspdf.umd.min.js"></script>
   <script defer src="../js/admin_nav.js"></script>
   <script defer src="../js/reportes_admin.js"></script>
 </head>
 <body>
-  <!-- 🔹 Navbar -->
   <header class="navbar">
     <div class="logo">
       <img src="../img/logo.png" alt="Logo Comercial Brich">
       <span>Comercial Brich</span>
     </div>
-    <a href="dashboard_admin.html" class="btn-back">⬅ Volver al Dashboard</a>
+    <a href="dashboard_admin.html" class="btn-back">Volver al Dashboard</a>
   </header>
 
   <main class="container">
-    <h1>📊 Reportes de Ventas (Administrador)</h1>
-    <p class="subtitle">Visualiza, analiza y exporta las métricas de tus ventas</p>
+    <h1>Reportes de Solicitudes de Compra</h1>
+    <p class="subtitle">Analisis de SOL aceptadas con datos reales del modulo de solicitudes.</p>
 
-    <!-- 🔹 Filtros -->
     <section class="filters">
-      <input type="date" id="fromDate">
-      <input type="date" id="toDate">
-      <select>
-        <option>Todos los Proveedores</option>
-        <option>Proveedor 1</option>
-        <option>Proveedor 2</option>
+      <input type="date" id="fromDate" aria-label="Fecha desde">
+      <input type="date" id="toDate" aria-label="Fecha hasta">
+      <select id="clienteFilter" aria-label="Cliente">
+        <option value="">Todos los clientes</option>
       </select>
-      <select>
-        <option>Todos los Clientes</option>
-        <option>Cliente 1</option>
-        <option>Cliente 2</option>
-      </select>
-      <select>
-        <option>Todas las Regiones</option>
-        <option>Región 1</option>
-        <option>Región 2</option>
-      </select>
-      <button class="btn-primary">🔍 Generar</button>
+      <button id="generarReporteBtn" class="btn-primary" type="button">Generar</button>
     </section>
 
-    <!-- 🔹 Resumen -->
     <section class="resumen">
-      <h2>Resumen</h2>
+      <div class="summary-grid">
+        <div><span>SOL aceptadas</span><strong id="totalSolicitudes">0</strong></div>
+        <div><span>Neto</span><strong id="totalNeto">$0</strong></div>
+        <div><span>IVA</span><strong id="totalIva">$0</strong></div>
+        <div><span>Total</span><strong id="totalGeneral">$0</strong></div>
+        <div><span>Promedio SOL</span><strong id="promedioSolicitud">$0</strong></div>
+      </div>
       <div class="export-buttons">
-        <button class="btn-export excel">📗 Excel</button>
-        <button class="btn-export pdf">📕 PDF</button>
+        <button id="exportExcelBtn" class="btn-export excel" type="button">Excel</button>
+        <button id="exportPdfBtn" class="btn-export pdf" type="button">PDF</button>
+      </div>
+      <p id="reportStatus" class="status-line"></p>
+    </section>
+
+    <section class="reports-grid">
+      <div class="report-card">
+        <h3>Total por cliente</h3>
+        <canvas id="ventasClienteChart"></canvas>
+      </div>
+      <div class="report-card">
+        <h3>Total por mes</h3>
+        <canvas id="ventasMesChart"></canvas>
+      </div>
+      <div class="report-card">
+        <h3>Productos por monto</h3>
+        <canvas id="productosChart"></canvas>
       </div>
     </section>
 
-    <!-- 🔹 Gráficos -->
-    <!-- 🔹 Reportes -->
-    <section class="reports-grid">
-    <div class="report-card full">
-        <h3>Ventas por Proveedor</h3>
-        <canvas id="ventasProveedorChart"></canvas>
-    </div>
-    <div class="report-card full">
-        <h3>Compras por Cliente</h3>
-        <canvas id="comprasClienteChart"></canvas>
-    </div>
-    <div class="report-card full">
-        <h3>Ventas por Región</h3>
-        <canvas id="ventasRegionChart"></canvas>
-    </div>
-    </section>
-
-
-    <!-- 🔹 Tabla -->
     <section class="table-wrapper">
-      <h2>Órdenes encontradas</h2>
+      <h2>SOL aceptadas</h2>
       <table>
         <thead>
           <tr>
             <th>Folio</th>
             <th>Cliente</th>
             <th>Fecha</th>
+            <th>Neto</th>
+            <th>IVA</th>
             <th>Total</th>
-            <th>Acciones</th>
+            <th></th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>OC-2025-01001</td>
-            <td>Hospital Regional</td>
-            <td>2025-09-10</td>
-            <td>$450.000</td>
-            <td><button class="btn-secondary">Ver</button></td>
-          </tr>
-          <tr>
-            <td>OC-2025-01002</td>
-            <td>Municipalidad de Arica</td>
-            <td>2025-09-09</td>
-            <td>$1.200.000</td>
-            <td><button class="btn-secondary">Ver</button></td>
-          </tr>
-        </tbody>
+        <tbody id="solicitudesReportTable"></tbody>
       </table>
     </section>
   </main>
-    <!-- Modal Detalle Orden -->
-    <div id="orderModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn">&times;</span>
-        <h2>📋 Detalle de Orden</h2>
-        <div id="orderDetails"></div>
-    </div>
-    </div>
 
+  <div id="solicitudModal" class="modal">
+    <div class="modal-content modal-wide">
+      <button id="closeModalBtn" class="close-btn" type="button" aria-label="Cerrar">&times;</button>
+      <h2 id="modalTitle">Detalle SOL</h2>
+      <div id="solicitudDetails"></div>
+    </div>
+  </div>
 </body>
 </html>

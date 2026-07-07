@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const buscarSolicitud = document.getElementById("buscarSolicitud");
   const filtroEstado = document.getElementById("filtroEstado");
   const btnRecargar = document.getElementById("btnRecargar");
-  const btnCrearOc = document.getElementById("btnCrearOc");
+  const btnCrearSolicitud = document.getElementById("btnCrearSolicitud");
   const btnGestionarClientes = document.getElementById("btnGestionarClientes");
   const solicitudesTable = document.getElementById("solicitudesTable");
   const printArea = document.getElementById("printArea");
@@ -106,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     solicitudesTable.innerHTML = "";
     if (lista.length === 0) {
-      solicitudesTable.innerHTML = `<tr><td colspan="7">No hay OC para mostrar.</td></tr>`;
+      solicitudesTable.innerHTML = `<tr><td colspan="7">No hay solicitudes para mostrar.</td></tr>`;
       return;
     }
 
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td><span class="badge ${escapeHtml(sol.estado || "borrador")}">${escapeHtml(sol.estado || "borrador")}</span></td>
         <td>${money(sol.total)}</td>
         <td>${fechaTexto(sol.fecha || sol.createdAt)}</td>
-        <td><button class="btn-secondary btn-ver-oc" type="button" data-id="${sol._id}">Ver</button></td>
+        <td><button class="btn-secondary btn-ver-sol" type="button" data-id="${sol._id}">Ver</button></td>
       `;
       solicitudesTable.appendChild(tr);
     });
@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <header class="print-header">
           <div>
             <h1>Comercial Brich</h1>
-            <p>Cotizacion ${escapeHtml(solicitudActual.folio || "")}</p>
+            <p>Solicitud ${escapeHtml(solicitudActual.folio || "")}</p>
           </div>
           <div>
             <strong>Fecha</strong>
@@ -203,7 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `).join("")
       : `<tr><td colspan="5">Sin items.</td></tr>`;
 
-    solicitudModalTitle.textContent = `Cotizacion ${solicitud.folio || ""}`;
+    solicitudModalTitle.textContent = `Solicitud ${solicitud.folio || ""}`;
     solicitudModalCliente.textContent = `${solicitud.cliente?.razonSocial || ""} | ${solicitud.cliente?.rut || ""}`;
     solicitudModalEstado.textContent = solicitud.estado || "borrador";
     solicitudModalEstado.className = `badge ${solicitud.estado || "borrador"}`.trim();
@@ -338,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  btnCrearOc.addEventListener("click", () => {
+  btnCrearSolicitud.addEventListener("click", () => {
     window.location.href = "solicitud_compra_nueva.html";
   });
   btnGestionarClientes.addEventListener("click", async () => {
@@ -350,7 +350,7 @@ document.addEventListener("DOMContentLoaded", () => {
   filtroEstado.addEventListener("change", renderSolicitudes);
   solicitudesTable.addEventListener("click", (e) => {
     const id = e.target.dataset.id;
-    if (e.target.classList.contains("btn-ver-oc") && id) cargarSolicitud(id);
+    if (e.target.classList.contains("btn-ver-sol") && id) cargarSolicitud(id);
   });
 
   cerrarSolicitudModal.addEventListener("click", cerrarSolicitud);

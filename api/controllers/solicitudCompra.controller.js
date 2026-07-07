@@ -20,6 +20,27 @@ function cleanString(value) {
   return String(value ?? "").trim();
 }
 
+function parseDateFilter(value, label, endOfDay = false) {
+  if (!value) return null;
+  const date = new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`);
+  if (Number.isNaN(date.getTime())) throw crearError(`${label} invalida`);
+  return date;
+}
+
+function addToMap(map, key, amount, extra = {}) {
+  const label = cleanString(key) || "Sin informacion";
+  const current = map.get(label) || { nombre: label, total: 0, cantidad: 0, ...extra };
+  current.total += Number(amount || 0);
+  current.cantidad += 1;
+  map.set(label, current);
+}
+
+function mapToSortedArray(map, limit = 12) {
+  return Array.from(map.values())
+    .sort((a, b) => Number(b.total || 0) - Number(a.total || 0))
+    .slice(0, limit);
+}
+
 function crearError(message, status = 400) {
   const err = new Error(message);
   err.status = status;
@@ -163,6 +184,112 @@ exports.listSolicitudesCompra = async (_req, res) => {
     res.json(solicitudes);
   } catch (err) {
     res.status(500).json({ error: "Error al obtener solicitudes de compra", details: err.message });
+  }
+};
+
+exports.getReportesSolicitudes = async (req, res) => {
+  try {
+    const fromDate = parseDateFilter(req.query.fromDate, "Fecha desde");
+    const toDate = parseDateFilter(req.query.toDate, "Fecha hasta", true);
+
+    if (fromDate && toDate && fromDate > toDate) {
+      throw crearError("El rango de fechas es invalido");
+    }
+
+    const filter = { estado: "aceptada" };
+    if (fromDate || toDate) {
+      filter.fecha = {};
+      if (fromDate) filter.fecha.$gte = fromDate;
+      if (toDate) filter.fecha.$lte = toDate;
+    }
+    if (req.query.cliente) {
+      filter["cliente.rut"] = cleanString(req.query.cliente);
+    }
+
+    const solicitudes = await SolicitudCompra.find(filter)
+      .sort({ fecha: -1, createdAt: -1 })
+      .lean();
+
+    const porCliente = new Map();
+    const porMes = new Map();
+    const porProducto = new Map();
+    let neto = 0;
+    let iva = 0;
+    let total = 0;
+
+    solicitudes.forEach((solicitud) => {
+      neto += Number(solicitud.neto || 0);
+      iva += Number(solicitud.iva || 0);
+      total += Number(solicitud.total || 0);
+
+      addToMap(porCliente, solicitud.cliente?.razonSocial, solicitud.total, {
+        rut: solicitud.cliente?.rut || "",
+      });
+
+      const date = solicitud.fecha ? new Date(solicitud.fecha) : null;
+      const mes = date && !Number.isNaN(date.getTime())
+        ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+        : "Sin fecha";
+      addToMap(porMes, mes, solicitud.total);
+
+      (solicitud.items || []).forEach((item) => {
+        const nombre = item.nombre || item.sku || "Sin producto";
+        const current = porProducto.get(nombre) || {
+          nombre,
+          sku: item.sku || "",
+          total: 0,
+          cantidad: 0,
+        };
+        current.total += Number(item.subtotal || 0);
+        current.cantidad += Number(item.cantidad || 0);
+        porProducto.set(nombre, current);
+      });
+    });
+
+    const clientes = Array.from(
+      new Map(
+        solicitudes
+          .map((solicitud) => solicitud.cliente)
+          .filter(Boolean)
+          .map((cliente) => [cliente.rut, {
+            rut: cliente.rut,
+            razonSocial: cliente.razonSocial,
+          }])
+      ).values()
+    ).sort((a, b) => String(a.razonSocial || "").localeCompare(String(b.razonSocial || "")));
+
+    res.json({
+      filtros: {
+        estado: "aceptada",
+        fromDate: req.query.fromDate || "",
+        toDate: req.query.toDate || "",
+        cliente: req.query.cliente || "",
+      },
+      resumen: {
+        totalSolicitudes: solicitudes.length,
+        neto,
+        iva,
+        total,
+        promedioSolicitud: solicitudes.length ? Math.round(total / solicitudes.length) : 0,
+      },
+      clientes,
+      porCliente: mapToSortedArray(porCliente),
+      porMes: Array.from(porMes.values()).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre))),
+      porProducto: mapToSortedArray(porProducto),
+      solicitudes: solicitudes.map((solicitud) => ({
+        id: solicitud._id,
+        folio: solicitud.folio,
+        cliente: solicitud.cliente,
+        fecha: solicitud.fecha,
+        estado: solicitud.estado,
+        neto: solicitud.neto,
+        iva: solicitud.iva,
+        total: solicitud.total,
+        items: solicitud.items || [],
+      })),
+    });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: "Error al generar reportes de solicitudes", details: err.message });
   }
 };
 

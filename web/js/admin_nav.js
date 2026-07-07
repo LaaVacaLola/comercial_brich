@@ -28,7 +28,7 @@
         links: [
           { href: "/html/dashboard_admin.html", label: "Dashboard" },
           { href: "/html/catalogo_admin.html", label: "Catalogo" },
-          { href: "/html/solicitudes_compra.html", label: "Cotizaciones" },
+          { href: "/html/solicitudes_compra.html", label: "Solicitudes de Compra" },
           { href: "/html/ordenes_admin.html", label: "Ordenes" },
           { href: "/html/reportes_admin.html", label: "Reportes" },
         ],

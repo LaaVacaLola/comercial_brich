@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const cerrarSolicitudCreadaModal = document.getElementById("cerrarSolicitudCreadaModal");
   const solicitudCreadaTitle = document.getElementById("solicitudCreadaTitle");
   const solicitudCreadaBody = document.getElementById("solicitudCreadaBody");
-  const btnNuevaOcLimpia = document.getElementById("btnNuevaOcLimpia");
+  const btnNuevaSolicitudLimpia = document.getElementById("btnNuevaSolicitudLimpia");
 
   let productos = [];
   let clientes = [];
@@ -266,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
       folioLabel.textContent = solicitud.folio || "Folio creado";
       estadoBadge.textContent = solicitud.estado || "borrador";
       estadoBadge.className = `badge ${solicitud.estado || "borrador"}`.trim();
-      setStatus(`OC creada: ${solicitud.folio}.`, "success");
+      setStatus(`SOL creada: ${solicitud.folio}.`, "success");
       abrirSolicitudCreada(solicitud);
     } catch (err) {
       setStatus(err.message, "error");
@@ -286,7 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </tr>
     `).join("");
 
-    solicitudCreadaTitle.textContent = `OC ${solicitud.folio} creada`;
+    solicitudCreadaTitle.textContent = `SOL ${solicitud.folio} creada`;
     solicitudCreadaBody.innerHTML = `
       <div class="modal-grid">
         <p><strong>Cliente</strong><span>${escapeHtml(solicitud.cliente?.razonSocial || "")}</span></p>
@@ -303,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
     solicitudCreadaModal.style.display = "flex";
   }
 
-  function limpiarOc() {
+  function limpiarSolicitud() {
     clienteSeleccionado = null;
     seleccionarCliente(null);
     items = [];
@@ -409,7 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
   cerrarSolicitudCreadaModal.addEventListener("click", () => {
     solicitudCreadaModal.style.display = "none";
   });
-  btnNuevaOcLimpia.addEventListener("click", limpiarOc);
+  btnNuevaSolicitudLimpia.addEventListener("click", limpiarSolicitud);
   window.addEventListener("click", (e) => {
     if (e.target === seleccionarClienteModal) seleccionarClienteModal.style.display = "none";
     if (e.target === clienteFormModal) clienteFormModal.style.display = "none";

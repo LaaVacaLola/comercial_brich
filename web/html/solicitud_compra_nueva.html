@@ -18,16 +18,16 @@
     <a href="solicitudes_compra.html" class="btn-back">Volver a solicitudes</a>
   </header>
 
-  <main class="page-shell oc-create-shell">
+  <main class="page-shell sol-create-shell">
     <section class="page-header">
       <div>
-        <h1>Nueva OC</h1>
-        <p>Selecciona cliente, agrega productos y guarda la cotizacion.</p>
+        <h1>Nueva SOL</h1>
+        <p>Selecciona cliente, agrega productos y guarda la solicitud.</p>
       </div>
-      <button id="btnGuardarSolicitud" type="button" class="btn-primary">Guardar OC</button>
+      <button id="btnGuardarSolicitud" type="button" class="btn-primary">Guardar SOL</button>
     </section>
 
-    <section class="oc-create-layout">
+    <section class="sol-create-layout">
       <aside class="panel products-sidebar">
         <div class="panel-header">
           <h2>Productos</h2>
@@ -40,7 +40,7 @@
         <form id="solicitudForm" class="panel form-panel">
           <div class="panel-header">
             <div>
-              <h2>Datos de la OC</h2>
+              <h2>Datos de la solicitud</h2>
               <p id="folioLabel">Folio pendiente</p>
             </div>
             <span id="estadoBadge" class="badge">Borrador</span>
@@ -102,7 +102,7 @@
       <div class="panel-header">
         <div>
           <h2>Seleccionar cliente</h2>
-          <p>Busca y selecciona el cliente para esta OC.</p>
+          <p>Busca y selecciona el cliente para esta solicitud.</p>
         </div>
         <button id="btnNuevoCliente" type="button" class="btn-primary">Nuevo cliente</button>
       </div>
@@ -140,11 +140,11 @@
   <div id="solicitudCreadaModal" class="modal">
     <div class="modal-content modal-content-wide">
       <button id="cerrarSolicitudCreadaModal" class="modal-close" type="button" aria-label="Cerrar">&times;</button>
-      <h2 id="solicitudCreadaTitle">OC creada</h2>
+      <h2 id="solicitudCreadaTitle">SOL creada</h2>
       <div id="solicitudCreadaBody" class="modal-detail"></div>
       <div class="actions-row modal-actions">
         <a href="solicitudes_compra.html" class="btn-secondary link-button">Volver al listado</a>
-        <button id="btnNuevaOcLimpia" type="button" class="btn-primary">Crear otra OC</button>
+        <button id="btnNuevaSolicitudLimpia" type="button" class="btn-primary">Crear otra SOL</button>
       </div>
     </div>
   </div>

@@ -7,6 +7,7 @@ router.use(auth, adminAuth);
 
 router.get("/", controller.listSolicitudesCompra);
 router.post("/", controller.createSolicitudCompra);
+router.get("/reportes/resumen", controller.getReportesSolicitudes);
 router.get("/:id", controller.getSolicitudCompraById);
 router.put("/:id", controller.updateSolicitudCompra);
 router.patch("/:id", controller.updateSolicitudCompra);
