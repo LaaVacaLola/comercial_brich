@@ -28,7 +28,14 @@
 
   <!-- Header del catálogo -->
   <section class="catalogo-header">
-    <h2 id="resultados-count">0 Productos</h2>
+    <div class="catalogo-summary">
+      <h2 id="resultados-count">0 Productos</h2>
+      <div class="region-status">
+        <span>Region:</span>
+        <strong id="regionActual">Sin seleccionar</strong>
+        <button id="cambiarRegion" type="button">Cambiar</button>
+      </div>
+    </div>
 
     <div class="catalogo-controls">
       <input type="text" id="searchBar" placeholder="🔍 Buscar productos..." />

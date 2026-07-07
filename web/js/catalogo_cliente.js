@@ -4,6 +4,7 @@ let regionSeleccionada = "";
 let precioMax = Infinity;
 let textoBusqueda = "";
 let ordenSeleccionado = "default";
+const REGION_STORAGE_KEY = "catalogoRegion";
 
 const grid = document.getElementById("productosGrid");
 const resultadosCount = document.getElementById("resultados-count");
@@ -22,6 +23,9 @@ const priceRange = document.getElementById("priceRange");
 const priceValue = document.getElementById("priceValue");
 const regionModal = document.getElementById("regionModal");
 const confirmRegion = document.getElementById("confirmRegion");
+const regionSelect = document.getElementById("regionSelect");
+const regionActual = document.getElementById("regionActual");
+const cambiarRegion = document.getElementById("cambiarRegion");
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -43,6 +47,53 @@ function formatCLP(value) {
 function productoEstaActivo(producto) {
   if (typeof producto.activo === "boolean") return producto.activo;
   return producto.estado !== "inactivo";
+}
+
+function normalizarRegion(value) {
+  return String(value || "").trim();
+}
+
+function regionesDisponibles() {
+  return [...new Set(productos.map((producto) => normalizarRegion(producto.region)).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "es"));
+}
+
+function actualizarRegionActual() {
+  regionActual.textContent = regionSeleccionada || "Sin seleccionar";
+}
+
+function poblarSelectorRegiones() {
+  const regiones = regionesDisponibles();
+  const opciones = regiones.length > 0
+    ? regiones
+    : Array.from(regionSelect.options)
+      .map((option) => normalizarRegion(option.value))
+      .filter(Boolean);
+
+  regionSelect.innerHTML = '<option value="">-- Selecciona --</option>';
+
+  opciones.forEach((region) => {
+    const option = document.createElement("option");
+    option.value = region;
+    option.textContent = region;
+    regionSelect.appendChild(option);
+  });
+
+  if (regionSeleccionada && opciones.includes(regionSeleccionada)) {
+    regionSelect.value = regionSeleccionada;
+  }
+}
+
+function abrirSelectorRegion() {
+  poblarSelectorRegiones();
+  regionModal.style.display = "flex";
+}
+
+function guardarRegion(region) {
+  regionSeleccionada = normalizarRegion(region);
+  localStorage.setItem(REGION_STORAGE_KEY, regionSeleccionada);
+  actualizarRegionActual();
+  aplicarFiltros();
 }
 
 function ofertaActiva(producto) {
@@ -112,7 +163,13 @@ async function cargarProductos() {
 
     const data = await resp.json();
     productos = data.filter((producto) => producto.aprobado === true && productoEstaActivo(producto));
+    const regionGuardada = normalizarRegion(localStorage.getItem(REGION_STORAGE_KEY));
+    const regiones = regionesDisponibles();
+    regionSeleccionada = regiones.includes(regionGuardada) ? regionGuardada : "";
+    actualizarRegionActual();
+    poblarSelectorRegiones();
     aplicarFiltros();
+    if (!regionSeleccionada) abrirSelectorRegion();
   } catch (err) {
     console.error("Error cargando productos:", err);
     productos = [];
@@ -345,7 +402,7 @@ function renderProductos(lista) {
 function aplicarFiltros() {
   let lista = productos.filter((producto) => {
     const precio = precioProducto(producto).precioUnitario;
-    const coincideRegion = !regionSeleccionada || producto.region === regionSeleccionada;
+    const coincideRegion = regionSeleccionada && normalizarRegion(producto.region) === regionSeleccionada;
     const coincidePrecio = precio <= precioMax;
     const texto = `${producto.nombre || ""} ${producto.sku || ""} ${producto.categoria || ""}`.toLowerCase();
     const coincideTexto = texto.includes(textoBusqueda.toLowerCase());
@@ -399,7 +456,6 @@ closeModal.addEventListener("click", () => {
 window.addEventListener("click", (event) => {
   if (event.target === cartModal) cartModal.style.display = "none";
   if (event.target === modal) modal.style.display = "none";
-  if (event.target === regionModal) regionModal.style.display = "none";
 });
 
 document.getElementById("filterBtn").addEventListener("click", () => {
@@ -432,12 +488,21 @@ document.getElementById("sortSelect").addEventListener("change", (event) => {
 
 if (confirmRegion) {
   confirmRegion.addEventListener("click", () => {
-    const select = document.getElementById("regionSelect");
-    regionSeleccionada = select.value || "";
+    const region = normalizarRegion(regionSelect.value);
+    if (!region) {
+      alert("Selecciona una region.");
+      return;
+    }
+
+    guardarRegion(region);
     regionModal.style.display = "none";
-    aplicarFiltros();
   });
 }
 
+if (cambiarRegion) {
+  cambiarRegion.addEventListener("click", abrirSelectorRegion);
+}
+
+actualizarRegionActual();
 actualizarCarrito();
 cargarProductos();

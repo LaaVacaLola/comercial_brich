@@ -87,3 +87,11 @@ Bitacora append-only del trabajo por fases.
 **Edge cases cubiertos:** Productos sin imagen, productos sin SKU, carrito vacio al exportar, librerias Excel no cargadas, productos con oferta activa, filtros sin region seleccionada, cantidades que llegan a cero.
 **Pruebas:** `node --check server.js` y `node --check web/js/catalogo_cliente.js` ejecutados correctamente. Verificacion HTTP local: `/` devuelve el catalogo cliente, `/admin/login` devuelve el login y `/api/productos` devuelve 90 productos.
 **Pendiente / deuda tecnica:** Verificar manualmente en navegador la descarga del Excel porque depende de las librerias CDN cargadas en cliente.
+
+## [2026-07-07] Fase 7 - Region seleccionada en catalogo cliente
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/html/catalogo_cliente.html` (indicador de region y boton Cambiar), `web/js/catalogo_cliente.js` (persistencia `localStorage.catalogoRegion`, modal obligatorio inicial, regiones dinamicas desde productos y filtro por region), `web/css/catalogo_cliente.css` (estilos del indicador de region).
+**Decisiones tecnicas:** Se usa `localStorage` para mantener la region entre visitas. El selector de region se rellena con las regiones reales de los productos aprobados/activos para evitar diferencias entre opciones estaticas y datos de Mongo. Sin region seleccionada no se muestran productos y se fuerza el modal inicial.
+**Edge cases cubiertos:** Primera visita sin region guardada, region guardada que ya no existe en productos, productos con region vacia, seleccion vacia en modal, cambio de region sin recargar.
+**Pruebas:** `node --check web/js/catalogo_cliente.js` y `node --check server.js` ejecutados correctamente.
+**Pendiente / deuda tecnica:** Verificar manualmente en navegador borrando `localStorage.catalogoRegion` y recargando `/`.

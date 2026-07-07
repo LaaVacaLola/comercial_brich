@@ -696,6 +696,41 @@ body {
   text-align: center;
 }
 
+.catalogo-summary {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.region-status {
+  align-items: center;
+  color: #475569;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.region-status strong {
+  color: #083c6f;
+}
+
+.region-status button {
+  background: #eaf3f8;
+  border: 1px solid #b9d8e8;
+  border-radius: 999px;
+  color: #083c6f;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 5px 10px;
+}
+
+.region-status button:hover {
+  background: #d8edf7;
+}
+
 @media (max-width: 768px) {
   .navbar {
     align-items: flex-start;
@@ -711,5 +746,10 @@ body {
   .cart {
     flex: 1;
     justify-content: center;
+  }
+
+  .catalogo-summary,
+  .catalogo-controls {
+    width: 100%;
   }
 }
