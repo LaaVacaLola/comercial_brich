@@ -143,3 +143,83 @@ Bitacora append-only del trabajo por fases.
 **Edge cases cubiertos:** Sin SOL aceptadas, filtro por cliente, fechas invalidas, rango invertido, solicitud aceptada sin items, sesion expirada en reportes, ruta `/reportes/resumen` sin colisionar con `/:id`.
 **Pruebas:** `node --check api/controllers/solicitudCompra.controller.js`, `node --check api/routes/solicitudCompra.routes.js`, `node --check web/js/solicitudes_compra.js`, `node --check web/js/solicitud_compra_nueva.js` y `node --check web/js/reportes_admin.js` ejecutados correctamente. Verificacion HTTP local: `/api/solicitudes-compra/reportes/resumen` responde `401` sin token, `200` con token admin y datos reales (`1` SOL aceptada), fecha invalida responde `400`, y `/api/solicitudes-compra/:id` sigue respondiendo `200`.
 **Pendiente / deuda tecnica:** Verificar visualmente en navegador la descarga de Excel/PDF y el layout de graficos con varios registros aceptados.
+
+## [2026-07-08] Fase 14 - Alineacion visual del catalogo cliente
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/js/catalogo_cliente.js` (`renderProductos`, estructura interna de tarjeta con zonas de imagen, informacion y precio), `web/css/catalogo_cliente.css` (`.catalogo-grid`, `.product-card`, `.product-media`, `.product-info`, `.product-sku`, `.product-price`, `.product-card .btn-add`).
+**Decisiones tecnicas:** Se mantuvo el flujo actual del catalogo y se agregaron contenedores semanticos solo al HTML generado por JS para controlar alturas desde CSS. Las tarjetas usan layout vertical con altura minima, area fija de imagen, nombre limitado a dos lineas, bloque de precio reservado y boton pegado al final de la tarjeta.
+**Edge cases cubiertos:** Nombres largos, productos sin SKU, imagenes con proporciones distintas, productos con y sin oferta activa, productos sin imagen.
+**Pruebas:** `node --check web/js/catalogo_cliente.js` ejecutado correctamente.
+**Pendiente / deuda tecnica:** Verificar visualmente en navegador con datos reales en escritorio y movil.
+
+## [2026-07-08] Fase 15 - Restauracion visual del catalogo cliente
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/js/catalogo_cliente.js` (`renderProductos`, restauracion del HTML original de tarjetas), `web/css/catalogo_cliente.css` (`.product-card`, `.product-card h4`, `.product-card p`, `.product-card .btn-add`).
+**Decisiones tecnicas:** Se retiro la estructura agregada en Fase 14 (`product-media`, `product-info`, `product-price`) porque alteraba el diseno visual existente. Se dejo una alineacion minima sobre las clases originales: tarjeta en columna, altura minima, nombre limitado a dos lineas y boton al fondo.
+**Edge cases cubiertos:** Nombres largos, SKU largos o ausentes, botones desalineados por distinta cantidad de texto.
+**Pruebas:** `node --check web/js/catalogo_cliente.js` ejecutado correctamente.
+**Pendiente / deuda tecnica:** Verificar visualmente que el catalogo vuelve al diseno esperado con datos reales.
+
+## [2026-07-08] Fase 16 - Ajuste modal producto admin
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/css/catalogo_admin.css` (`.modal`, `.modal-content-wide`, `.producto-form label`, controles dentro del modal de producto).
+**Decisiones tecnicas:** Se redujo el ancho del modal de producto de admin, se compacto padding/espaciado y se agrego `max-height` con scroll interno para pantallas bajas. Los ajustes especificos se aplican sobre `.modal-content-wide` para no redisenar los modales de oferta y normalizacion.
+**Edge cases cubiertos:** Pantallas con poca altura, formulario de producto lleno, textarea de descripcion, campos en grilla de dos columnas.
+**Pruebas:** Cambio CSS revisado por diff; no requiere validacion JS.
+**Pendiente / deuda tecnica:** Verificar visualmente en navegador con sesion admin.
+
+## [2026-07-08] Fase 17 - Excel profesional carrito cliente
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/js/catalogo_cliente.js` (`exportarExcel`, estructura y estilos del archivo generado).
+**Decisiones tecnicas:** Se mantuvo ExcelJS/FileSaver y se rediseño el workbook generado desde el carrito publico. El archivo incluye logo, cabecera corporativa, fecha, region, resumen de productos/unidades/total/ahorro, tabla con filtros, filas alternadas, moneda CLP, total destacado y nota comercial. No se consume `/api/empresa` porque es una ruta protegida para admin.
+**Edge cases cubiertos:** Carrito vacio, librerias de exportacion no cargadas, logo no disponible, producto sin SKU, productos con y sin oferta, region no seleccionada y nombres largos.
+**Pruebas:** `node --check web/js/catalogo_cliente.js` ejecutado correctamente.
+**Pendiente / deuda tecnica:** Verificar manualmente descargando y abriendo el Excel en navegador, porque la apariencia final depende de Excel/LibreOffice.
+
+## [2026-07-08] Fase 18 - Legibilidad y scroll del Excel carrito
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/js/catalogo_cliente.js` (`exportarExcel`, ajustes de columnas, alturas, wrap y scroll).
+**Decisiones tecnicas:** Se elimino el congelado superior del Excel para evitar que los productos queden ocultos bajo la cabecera al hacer scroll. Se ampliaron las columnas de SKU, producto y precios, se activo ajuste de texto en SKU/producto y se calcula una altura de fila dinamica segun el largo del texto.
+**Edge cases cubiertos:** Nombres largos, SKU largos, textos multilínea, filas con oferta, scroll vertical con cabecera extensa.
+**Pruebas:** `node --check web/js/catalogo_cliente.js` ejecutado correctamente.
+**Pendiente / deuda tecnica:** Validar visualmente el archivo descargado en Excel/LibreOffice con productos reales.
+
+## [2026-07-08] Fase 19 - Ubicacion del logo en Excel carrito
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/js/catalogo_cliente.js` (`exportarExcel`, cabecera y posicion del logo).
+**Decisiones tecnicas:** Se reservo el bloque `A1:B3` para el logo con fondo claro y borde corporativo, dejando el titulo y subtitulo en `C1:H3`. El logo se aumento levemente y se reposiciono dentro de ese bloque para que quede integrado al encabezado.
+**Edge cases cubiertos:** Logo disponible, cabecera sin superposicion con titulo, espacio superior estable para Excel/LibreOffice.
+**Pruebas:** `node --check web/js/catalogo_cliente.js` ejecutado correctamente.
+**Pendiente / deuda tecnica:** Validar visualmente el archivo descargado con el logo real en Excel/LibreOffice.
+
+## [2026-07-08] Fase 20 - Excel profesional reportes SOL admin
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/html/reportes_admin.html` (carga de ExcelJS), `web/js/reportes_admin.js` (`exportarExcel`, plantilla ExcelJS con logo y hojas estructuradas).
+**Decisiones tecnicas:** Se reemplazo la exportacion simple con SheetJS por una plantilla basada en ExcelJS para poder insertar el logo real. El workbook incluye hojas `Resumen`, `SOL aceptadas`, `Productos` y `Detalle items`, con cabecera corporativa, logo, filtros, resumen financiero, tablas con filtros, filas alternadas, bordes, moneda CLP y textos largos con ajuste.
+**Edge cases cubiertos:** Reporte sin SOL, ExcelJS no disponible, logo no disponible, filtros vacios, nombres largos de clientes/productos e items multiples por SOL.
+**Pruebas:** `node --check web/js/reportes_admin.js` ejecutado correctamente.
+**Pendiente / deuda tecnica:** Validar manualmente descargando y abriendo el Excel en navegador con sesion admin.
+
+## [2026-07-08] Fase 21 - Logo y legibilidad Excel reportes SOL
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/js/reportes_admin.js` (`exportarExcel`, carga base64 del logo, cabecera y dimensiones de celdas).
+**Decisiones tecnicas:** Se cambio la carga del logo a Data URL/base64 con `FileReader` para mayor compatibilidad de ExcelJS en navegador. Se amplio la cabecera a `A1:B4` para alojar mejor el logo y se ajustaron anchos/alturas dinamicas en resumen, SOL aceptadas, productos y detalle de items para evitar textos cortados.
+**Edge cases cubiertos:** Logo no visible por formato de imagen, nombres largos de cliente/producto, SKU largos, filtros con texto extenso, filas de detalle con varias lineas.
+**Pruebas:** `node --check web/js/reportes_admin.js` ejecutado correctamente.
+**Pendiente / deuda tecnica:** Validar visualmente descargando el Excel en navegador y abriendolo en Excel/LibreOffice.
+
+## [2026-07-08] Fase 22 - Forzar logo local en Excel reportes SOL
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/js/reportes_admin.js` (`loadLogo`, rutas de logo y fallback visual).
+**Decisiones tecnicas:** La exportacion ahora intenta cargar el logo desde `/img/logo.png` y `../img/logo.png`, convierte el PNG a Data URL y reintenta con base64 limpio si ExcelJS no acepta el Data URL completo. Si ninguna ruta funciona, se muestra una marca de texto `Comercial Brich` dentro del bloque del logo y se deja un `console.warn` con el diagnostico.
+**Edge cases cubiertos:** Ruta relativa distinta segun URL de la pagina, respuesta HTTP no OK, base64 vacio, fallo de insercion de imagen en ExcelJS y ausencia de logo visible en cabecera.
+**Pruebas:** `node --check web/js/reportes_admin.js` ejecutado correctamente.
+**Pendiente / deuda tecnica:** Validar visualmente descargando el Excel desde la pagina de reportes admin.
+
+## [2026-07-08] Fase 23 - PDF profesional reportes SOL admin
+**Archivos creados:** Ninguno.
+**Archivos modificados:** `web/js/reportes_admin.js` (`exportarPdf`, plantilla PDF con logo, cabecera corporativa, resumen, rankings y tabla paginada).
+**Decisiones tecnicas:** Se reemplazo el PDF simple por una plantilla horizontal en jsPDF, sin agregar dependencias. El archivo carga el logo local desde `/img/logo.png` o `../img/logo.png`, usa colores corporativos, muestra filtros y fecha de generacion, agrega tarjetas de resumen, rankings de clientes/productos y pagina automaticamente el detalle completo de SOL aceptadas.
+**Edge cases cubiertos:** Libreria PDF no disponible, reporte sin datos, logo no accesible, textos largos de clientes, filtros vacios y cantidad de solicitudes mayor a una pagina.
+**Pruebas:** `node --check web/js/reportes_admin.js` ejecutado correctamente.
+**Pendiente / deuda tecnica:** Validar visualmente descargando el PDF desde la pagina de reportes admin con datos reales.

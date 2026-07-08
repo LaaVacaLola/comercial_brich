@@ -278,7 +278,69 @@ async function exportarExcel() {
   }
 
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("Carrito");
+  workbook.creator = "Comercial Brich";
+  workbook.created = new Date();
+
+  const sheet = workbook.addWorksheet("Carrito", {
+    pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+  });
+
+  const brandBlue = "083C6F";
+  const brandCyan = "0097C9";
+  const brandGreen = "16A34A";
+  const brandYellow = "FFC107";
+  const darkText = "1E293B";
+  const mutedText = "64748B";
+  const lightBlue = "EAF3F8";
+  const borderColor = "CBD5E1";
+  const moneyFormat = '"$"#,##0';
+  const generatedAt = new Date();
+  const totalCantidad = carrito.reduce((acc, item) => acc + item.cantidad, 0);
+  const total = carrito.reduce((acc, item) => acc + item.precioUnitario * item.cantidad, 0);
+  const totalOriginal = carrito.reduce((acc, item) => acc + item.precioOriginal * item.cantidad, 0);
+  const ahorro = Math.max(0, totalOriginal - total);
+
+  sheet.properties.defaultRowHeight = 22;
+  sheet.columns = [
+    { header: "Item", key: "item", width: 8 },
+    { header: "SKU", key: "sku", width: 24 },
+    { header: "Producto", key: "producto", width: 62 },
+    { header: "Cantidad", key: "cantidad", width: 12 },
+    { header: "Precio unitario", key: "precioUnitario", width: 20 },
+    { header: "Oferta %", key: "oferta", width: 12 },
+    { header: "Precio original", key: "precioOriginal", width: 20 },
+    { header: "Subtotal", key: "subtotal", width: 20 },
+  ];
+
+  sheet.mergeCells("A1:B3");
+  sheet.getCell("A1").value = "";
+  sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: lightBlue } };
+  sheet.getCell("A1").border = {
+    top: { style: "medium", color: { argb: brandBlue } },
+    left: { style: "medium", color: { argb: brandBlue } },
+    bottom: { style: "medium", color: { argb: brandBlue } },
+    right: { style: "medium", color: { argb: brandBlue } },
+  };
+
+  sheet.mergeCells("C1:H1");
+  sheet.getCell("C1").value = "Comercial Brich";
+  sheet.getCell("C1").font = { bold: true, size: 20, color: { argb: "FFFFFF" } };
+  sheet.getCell("C1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: brandBlue } };
+  sheet.getCell("C1").alignment = { horizontal: "center", vertical: "middle" };
+
+  sheet.mergeCells("C2:H2");
+  sheet.getCell("C2").value = "Carrito de compras";
+  sheet.getCell("C2").font = { bold: true, size: 14, color: { argb: brandBlue } };
+  sheet.getCell("C2").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF" } };
+  sheet.getCell("C2").alignment = { horizontal: "center", vertical: "middle" };
+
+  sheet.mergeCells("C3:H3");
+  sheet.getCell("C3").value = "Resumen preparado desde el catalogo publico";
+  sheet.getCell("C3").font = { italic: true, size: 10, color: { argb: mutedText } };
+  sheet.getCell("C3").alignment = { horizontal: "center", vertical: "middle" };
+  sheet.getRow(1).height = 26;
+  sheet.getRow(2).height = 24;
+  sheet.getRow(3).height = 22;
 
   try {
     const response = await fetch("../img/logo.png");
@@ -286,58 +348,147 @@ async function exportarExcel() {
       const blob = await response.blob();
       const arrayBuffer = await blob.arrayBuffer();
       const imageId = workbook.addImage({ buffer: arrayBuffer, extension: "png" });
-      sheet.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 120, height: 64 } });
+      sheet.addImage(imageId, { tl: { col: 0.35, row: 0.25 }, ext: { width: 118, height: 64 } });
     }
   } catch (err) {
     console.warn("No se pudo agregar el logo al Excel:", err.message);
   }
 
-  sheet.mergeCells("C1", "F2");
-  sheet.getCell("C1").value = "Comercial Brich - Carrito de Compras";
-  sheet.getCell("C1").font = { size: 16, bold: true, color: { argb: "083C6F" } };
-  sheet.getCell("C1").alignment = { vertical: "middle", horizontal: "center" };
+  const infoRows = [
+    ["Fecha de generacion", generatedAt.toLocaleString("es-CL"), "", "", "Region", regionSeleccionada || "Sin seleccionar", "", ""],
+    ["Productos distintos", carrito.length, "", "", "Unidades totales", totalCantidad, "", ""],
+    ["Total carrito", total, "", "", "Ahorro por ofertas", ahorro, "", ""],
+  ];
 
-  sheet.addRow([]);
-  sheet.addRow([]);
-
-  const header = sheet.addRow(["SKU", "Producto", "Cantidad", "Precio unitario", "Oferta %", "Subtotal"]);
-  header.eachCell((cell) => {
-    cell.font = { bold: true, color: { argb: "FFFFFF" } };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "083C6F" } };
-    cell.alignment = { horizontal: "center", vertical: "middle" };
+  infoRows.forEach((values, index) => {
+    const row = sheet.getRow(4 + index);
+    row.values = values;
+    row.height = 23;
+    [1, 5].forEach((col) => {
+      const cell = row.getCell(col);
+      cell.font = { bold: true, color: { argb: brandBlue } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: lightBlue } };
+    });
+    [2, 6].forEach((col) => {
+      const cell = row.getCell(col);
+      cell.font = { bold: true, color: { argb: darkText } };
+      cell.alignment = { vertical: "middle", wrapText: true };
+    });
   });
 
-  carrito.forEach((item) => {
-    const row = sheet.addRow([
+  sheet.getCell("B6").numFmt = moneyFormat;
+  sheet.getCell("F6").numFmt = moneyFormat;
+
+  sheet.mergeCells("A8:H8");
+  sheet.getCell("A8").value = "Detalle de productos";
+  sheet.getCell("A8").font = { bold: true, size: 12, color: { argb: "FFFFFF" } };
+  sheet.getCell("A8").fill = { type: "pattern", pattern: "solid", fgColor: { argb: brandCyan } };
+  sheet.getCell("A8").alignment = { horizontal: "left", vertical: "middle" };
+
+  const headerRow = sheet.getRow(10);
+  headerRow.values = ["Item", "SKU", "Producto", "Cantidad", "Precio unitario", "Oferta %", "Precio original", "Subtotal"];
+  headerRow.height = 26;
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: "FFFFFF" } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: brandBlue } };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.border = {
+      top: { style: "thin", color: { argb: brandBlue } },
+      left: { style: "thin", color: { argb: brandBlue } },
+      bottom: { style: "thin", color: { argb: brandBlue } },
+      right: { style: "thin", color: { argb: brandBlue } },
+    };
+  });
+
+  carrito.forEach((item, index) => {
+    const rowNumber = 11 + index;
+    const row = sheet.getRow(rowNumber);
+    const nombreLength = String(item.nombre || "").length;
+    const skuLength = String(item.sku || "Sin SKU").length;
+    row.values = [
+      index + 1,
       item.sku || "Sin SKU",
       item.nombre,
       item.cantidad,
       item.precioUnitario,
       item.ofertaPorcentaje || 0,
+      item.precioOriginal,
       item.precioUnitario * item.cantidad,
-    ]);
-    row.getCell(4).numFmt = "$#,##0";
-    row.getCell(5).numFmt = "0.00";
-    row.getCell(6).numFmt = "$#,##0";
+    ];
+    row.height = Math.max(28, Math.min(72, 22 + Math.ceil(Math.max(nombreLength / 42, skuLength / 20)) * 14));
+
+    row.eachCell((cell, colNumber) => {
+      cell.border = {
+        top: { style: "thin", color: { argb: borderColor } },
+        left: { style: "thin", color: { argb: borderColor } },
+        bottom: { style: "thin", color: { argb: borderColor } },
+        right: { style: "thin", color: { argb: borderColor } },
+      };
+      cell.alignment = {
+        horizontal: colNumber === 2 || colNumber === 3 ? "left" : "center",
+        vertical: "top",
+        wrapText: colNumber === 2 || colNumber === 3,
+      };
+      if (index % 2 === 1) {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "F8FAFC" } };
+      }
+    });
+
+    row.getCell(3).font = { color: { argb: darkText } };
+    row.getCell(5).numFmt = moneyFormat;
+    row.getCell(6).numFmt = "0.00";
+    row.getCell(7).numFmt = moneyFormat;
+    row.getCell(8).numFmt = moneyFormat;
   });
 
-  const total = carrito.reduce((acc, item) => acc + item.precioUnitario * item.cantidad, 0);
-  sheet.addRow([]);
-  const totalRow = sheet.addRow(["", "", "", "", "TOTAL", total]);
-  totalRow.font = { bold: true, color: { argb: "083C6F" } };
-  totalRow.getCell(6).numFmt = "$#,##0";
+  const totalRowNumber = 12 + carrito.length;
+  const totalRow = sheet.getRow(totalRowNumber);
+  totalRow.values = ["", "", "", "", "", "TOTAL", "", total];
+  totalRow.height = 28;
+  totalRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: "FFFFFF" } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: brandGreen } };
+    cell.border = {
+      top: { style: "thin", color: { argb: brandGreen } },
+      left: { style: "thin", color: { argb: brandGreen } },
+      bottom: { style: "thin", color: { argb: brandGreen } },
+      right: { style: "thin", color: { argb: brandGreen } },
+    };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+  });
+  totalRow.getCell(8).numFmt = moneyFormat;
 
-  sheet.columns = [
-    { width: 20 },
-    { width: 55 },
-    { width: 12 },
-    { width: 18 },
-    { width: 12 },
-    { width: 18 },
-  ];
+  const noteRowNumber = totalRowNumber + 2;
+  sheet.mergeCells(`A${noteRowNumber}:H${noteRowNumber}`);
+  sheet.getCell(`A${noteRowNumber}`).value = "Documento generado automaticamente desde el catalogo publico. Valores referenciales sujetos a confirmacion comercial.";
+  sheet.getCell(`A${noteRowNumber}`).font = { italic: true, color: { argb: mutedText } };
+  sheet.getCell(`A${noteRowNumber}`).alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+
+  [1, 2, 3, 4, 5, 6].forEach((rowNumber) => {
+    sheet.getRow(rowNumber).eachCell((cell) => {
+      cell.border = {
+        top: { style: "thin", color: { argb: borderColor } },
+        left: { style: "thin", color: { argb: borderColor } },
+        bottom: { style: "thin", color: { argb: borderColor } },
+        right: { style: "thin", color: { argb: borderColor } },
+      };
+      cell.alignment = { vertical: "middle" };
+    });
+  });
+
+  sheet.autoFilter = {
+    from: { row: 10, column: 1 },
+    to: { row: 10 + carrito.length, column: 8 },
+  };
+
+  sheet.getRow(10).alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+
+  sheet.getCell("F6").fill = { type: "pattern", pattern: "solid", fgColor: { argb: brandYellow } };
+  sheet.getCell("F6").font = { bold: true, color: { argb: darkText } };
 
   const buffer = await workbook.xlsx.writeBuffer();
-  saveAs(new Blob([buffer], { type: "application/octet-stream" }), "Carrito_Comercial_Brich.xlsx");
+  const fechaArchivo = generatedAt.toISOString().slice(0, 10);
+  saveAs(new Blob([buffer], { type: "application/octet-stream" }), `Carrito_Comercial_Brich_${fechaArchivo}.xlsx`);
 }
 
 function abrirModal(producto) {
@@ -380,7 +531,7 @@ function renderProductos(lista) {
     card.className = "product-card";
     card.innerHTML = `
       <img src="${escapeHtml(producto.imagen || "../img/no-image.png")}" alt="${escapeHtml(producto.nombre || "Producto")}">
-      <h4>${escapeHtml(producto.nombre || "Producto sin nombre")}</h4>
+      <h4 title="${escapeHtml(producto.nombre || "Producto sin nombre")}">${escapeHtml(producto.nombre || "Producto sin nombre")}</h4>
       <p>${escapeHtml(producto.sku || producto.id_padre || "Sin SKU")}</p>
       ${renderPrecioProducto(producto)}
       <button class="btn-add" data-id="${escapeHtml(id)}" type="button">Agregar al carrito</button>
